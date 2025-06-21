@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub struct WorkspaceConfig {
     pub base_dir: String,
     pub branch_prefix: String,
