@@ -14,16 +14,18 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
 ## 作業ルール
 
 ⚠️ **重要**: 作業内容は実装前にもう一度整理し、詳細化できるなら詳細化してドキュメントを更新してから作業を開始すること
+⚠️ **重要**: 作業前に @ai-docs/designs/design.md を参照し、実装設計を確認すること
+
 
 ## 実装タスク一覧
 
 ### Phase 1: 基本CLI構造の構築
 
 #### Task 1-1: 基本CLIフレームワークの実装
-- [ ] **目的**: コマンド構造の基盤を作成
+- [x] **目的**: コマンド構造の基盤を作成
 - **詳細実装手順**:
-  1. [ ] `Cargo.toml`に`clap = { version = "4.0", features = ["derive"] }`を追加
-  2. [ ] `src/cli.rs`を作成し、以下を実装:
+  1. [x] `Cargo.toml`に`clap = { version = "4.0", features = ["derive"] }`を追加
+  2. [x] `src/cli.rs`を作成し、以下を実装:
      ```rust
      use clap::{Parser, Subcommand};
      
@@ -41,7 +43,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          List,
      }
      ```
-  3. [ ] `src/main.rs`を更新:
+  3. [x] `src/main.rs`を更新:
      ```rust
      mod cli;
      use clap::Parser;
@@ -59,12 +61,12 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          }
      }
      ```
-  4. [ ] `cargo run -- start test-task` でテスト実行
-  5. [ ] `cargo run -- list` でテスト実行
-  6. [ ] `cargo run -- --help` でヘルプ表示確認
+  4. [x] `cargo run -- start test-task` でテスト実行
+  5. [x] `cargo run -- list` でテスト実行
+  6. [x] `cargo run -- --help` でヘルプ表示確認
 - **完了条件**: 
-  - [ ] 両コマンドがエラーなく実行でき、適切なログが出力される
-  - [ ] ヘルプメッセージが適切に表示される
+  - [x] 両コマンドがエラーなく実行でき、適切なログが出力される
+  - [x] ヘルプメッセージが適切に表示される
 
 #### Task 1-2: プロジェクト構造の整備
 - [ ] **目的**: 必要なモジュールファイルの作成
