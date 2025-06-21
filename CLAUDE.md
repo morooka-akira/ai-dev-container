@@ -33,7 +33,7 @@ cargo check
 cargo fmt
 
 # Run linter
-cargo clippy
+cargo clippy --all-targets -- -D warnings
 ```
 
 ## Project Structure
@@ -53,5 +53,5 @@ This is a newly initialized Rust project with a basic "Hello, world!" program. T
 - 実装については、@ai-docs/designs/design.md を参照して進めてください。
 - 実装方針に変更があった場合は必ず、@ai-docs/designs/design.md, @ai-docs/designs/tasks.md も更新してください。
 - 実装は @ai-docs/designs/tasks.md を見て進め、リストの更新(チェック)も必ず行って同期してください
-- 実装が完了したら、test, fmt, clippyは必ず通してください
+- 実装が完了したら、test, fmt, clippyは必ず通してください(コマンド参照)
 - 完了したら、gh コマンドでPRを作成して報告してください
