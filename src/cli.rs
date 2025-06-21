@@ -10,6 +10,13 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    Start { task_name: String },
-    List,
+    Start {
+        task_name: String,
+        #[arg(short, long, default_value = "workspace.yml")]
+        config: String,
+    },
+    List {
+        #[arg(short, long, default_value = "workspace.yml")]
+        config: String,
+    },
 }
