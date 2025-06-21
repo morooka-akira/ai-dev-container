@@ -46,7 +46,7 @@ The project follows standard Rust/Cargo conventions:
 
 This is a newly initialized Rust project with a basic "Hello, world!" program. The project uses Rust edition 2024 and has no dependencies configured yet.
 
-## Working Rules
+## Working Rules(作業前に確認し、必ず守るルール)
 - 作業を行う前に、設計、検討内容、作業リストを ai-docs/works/ 配下に必ず書いて作業を開始してください
     - format: yyyymmdd-<workname>.md
 - 作業にファイル更新が入る場合は、mainブランチからブランチを切って作業してください
