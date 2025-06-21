@@ -69,9 +69,9 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
   - [x] ヘルプメッセージが適切に表示される
 
 #### Task 1-2: プロジェクト構造の整備
-- [ ] **目的**: 必要なモジュールファイルの作成
+- [x] **目的**: 必要なモジュールファイルの作成
 - **詳細実装手順**:
-  1. [ ] `src/workspace.rs`を作成:
+  1. [x] `src/workspace.rs`を作成:
      ```rust
      pub struct WorkspaceManager;
      
@@ -91,7 +91,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          }
      }
      ```
-  2. [ ] `src/config.rs`を作成:
+  2. [x] `src/config.rs`を作成:
      ```rust
      pub struct WorkspaceConfig {
          pub base_dir: String,
@@ -112,7 +112,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          WorkspaceConfig::default()
      }
      ```
-  3. [ ] `src/utils.rs`を作成:
+  3. [x] `src/utils.rs`を作成:
      ```rust
      use chrono::{DateTime, Local};
      
@@ -121,8 +121,8 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          now.format("%Y%m%d-%H%M%S").to_string()
      }
      ```
-  4. [ ] `Cargo.toml`に`chrono = { version = "0.4", features = ["serde"] }`を追加
-  5. [ ] `src/main.rs`を更新してモジュールを使用:
+  4. [x] `Cargo.toml`に`chrono = { version = "0.4", features = ["serde"] }`を追加
+  5. [x] `src/main.rs`を更新してモジュールを使用:
      ```rust
      mod cli;
      mod workspace;
@@ -151,11 +151,11 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          }
      }
      ```
-  6. [ ] `cargo check`でコンパイル確認
-  7. [ ] `cargo run -- start test-task`で動作確認
+  6. [x] `cargo check`でコンパイル確認
+  7. [x] `cargo run -- start test-task`で動作確認
 - **完了条件**: 
-  - [ ] 全モジュールが正常にコンパイルできる
-  - [ ] 各モジュールの関数が呼び出され、ログが出力される
+  - [x] 全モジュールが正常にコンパイルできる
+  - [x] 各モジュールの関数が呼び出され、ログが出力される
 
 ### Phase 2: 設定ファイル機能の実装
 
