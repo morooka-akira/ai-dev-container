@@ -1,5 +1,7 @@
 use clap::{Parser, Subcommand};
 
+const DEFAULT_CONFIG_FILE: &str = "workspace.yml";
+
 #[derive(Parser)]
 #[command(name = "ai-workspace")]
 #[command(about = "AI workspace management tool")]
@@ -12,11 +14,11 @@ pub struct Cli {
 pub enum Commands {
     Start {
         task_name: String,
-        #[arg(short, long, default_value = "workspace.yml")]
+        #[arg(short, long, default_value = DEFAULT_CONFIG_FILE)]
         config: String,
     },
     List {
-        #[arg(short, long, default_value = "workspace.yml")]
+        #[arg(short, long, default_value = DEFAULT_CONFIG_FILE)]
         config: String,
     },
 }
@@ -35,7 +37,7 @@ mod tests {
         match cli.command {
             Commands::Start { task_name, config } => {
                 assert_eq!(task_name, "test-task");
-                assert_eq!(config, "workspace.yml"); // デフォルト値
+                assert_eq!(config, DEFAULT_CONFIG_FILE); // デフォルト値
             }
             _ => panic!("Expected Start command"),
         }
@@ -85,7 +87,7 @@ mod tests {
 
         match cli.command {
             Commands::List { config } => {
-                assert_eq!(config, "workspace.yml"); // デフォルト値
+                assert_eq!(config, DEFAULT_CONFIG_FILE); // デフォルト値
             }
             _ => panic!("Expected List command"),
         }
