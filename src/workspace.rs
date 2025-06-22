@@ -129,10 +129,6 @@ impl WorkspaceManager {
         // メインワークツリーは除外（一般的に「main」ブランチの作業ディレクトリ）
         workspace_list.retain(|ws| ws.name != "main" && !ws.path.ends_with("/.git"));
 
-        println!("📋 発見されたワークスペース: {} 件", workspace_list.len());
-        for workspace in &workspace_list {
-            println!("  - {} -> {}", workspace.branch, workspace.path);
-        }
 
         Ok(workspace_list)
     }
