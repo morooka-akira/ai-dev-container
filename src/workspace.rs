@@ -174,11 +174,11 @@ mod tests {
             let task_name = "test-task";
             let _base_dir = "../test-workspaces";
             let branch_prefix = "test/";
-            
+
             let workspace_name = format!("{}-{}", timestamp, task_name);
             let branch_name = format!("{}{}", branch_prefix, task_name);
             let workspace_path = format!("{}/{}", _base_dir, workspace_name);
-            
+
             assert!(workspace_name.contains("test-task"));
             assert!(workspace_path.contains("../test-workspaces"));
             assert!(branch_name.starts_with("test/"));
@@ -201,8 +201,12 @@ mod tests {
                 let timestamp = crate::utils::generate_timestamp();
                 let workspace_name = format!("{}-{}", timestamp, task_name);
                 let branch_name = format!("test/{}", task_name);
-                
-                assert!(workspace_name.contains(task_name), "Failed for task name: {}", task_name);
+
+                assert!(
+                    workspace_name.contains(task_name),
+                    "Failed for task name: {}",
+                    task_name
+                );
                 assert!(branch_name.contains(task_name));
             }
         }
@@ -217,10 +221,10 @@ mod tests {
             let task_name = "";
             let _base_dir = "../test-workspaces";
             let branch_prefix = "test/";
-            
+
             let workspace_name = format!("{}-{}", timestamp, task_name);
             let branch_name = format!("{}{}", branch_prefix, task_name);
-            
+
             // 空の名前でも構造は正しく生成される
             assert!(workspace_name.ends_with("-"));
             assert_eq!(branch_name, "test/");
@@ -251,7 +255,7 @@ mod tests {
             // 複数の操作を連続して実行してもエラーにならないことを確認
             // テスト環境では実際の作成は行わず、list操作のみテスト
             assert!(manager.list_workspaces().is_ok());
-            
+
             // パラメータ生成のテスト
             let tasks = vec!["task1", "task2", "task3"];
             for task in tasks {
@@ -323,19 +327,19 @@ mod tests {
             let timestamp = crate::utils::generate_timestamp();
             let task_name = "timestamp-test";
             let workspace_name = format!("{}-{}", timestamp, task_name);
-            
+
             // タイムスタンプの形式をチェック (YYYYMMDD-HHMMSS-task-name)
             let parts: Vec<&str> = workspace_name.split('-').collect();
             assert!(parts.len() >= 3);
-            
+
             // 最初の部分がタイムスタンプ（8桁の数字）
             assert_eq!(parts[0].len(), 8);
             assert!(parts[0].chars().all(|c| c.is_ascii_digit()));
-            
+
             // 2番目の部分が時刻（6桁の数字）
             assert_eq!(parts[1].len(), 6);
             assert!(parts[1].chars().all(|c| c.is_ascii_digit()));
-            
+
             // 最後にタスク名が含まれる
             assert!(workspace_name.contains("timestamp-test"));
         }
