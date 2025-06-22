@@ -15,7 +15,7 @@ pub fn draw(f: &mut Frame, app: &App) {
             Constraint::Length(3), // Header
             Constraint::Min(0),    // Content
         ])
-        .split(f.size());
+        .split(f.area());
 
     // Header
     let header = Paragraph::new("AI Workspace Manager")

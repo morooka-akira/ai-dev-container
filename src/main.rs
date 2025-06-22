@@ -30,6 +30,7 @@ fn main() {
                 &config.workspace.base_dir,
                 &config.workspace.branch_prefix,
                 &config.workspace.copy_files,
+                &config.workspace.pre_commands,
             ) {
                 Ok(info) => println!("✅ ワークスペース準備完了: {:?}", info),
                 Err(e) => eprintln!("❌ エラー: {}", e),
