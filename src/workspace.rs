@@ -132,11 +132,62 @@ impl WorkspaceManager {
 
         Ok(workspace_list)
     }
+
+    #[allow(dead_code)]
+    pub fn remove_workspace(&self, workspace_name: &str) -> Result<(), String> {
+        // Worktreeを削除
+        if let Ok(worktree) = self.repo.find_worktree(workspace_name) {
+            // ワークスペースのパスを取得
+            if let Some(path) = worktree.path().to_str() {
+                // まずディレクトリを削除
+                if Path::new(path).exists() {
+                    std::fs::remove_dir_all(path)
+                        .map_err(|e| format!("ディレクトリ削除エラー: {}", e))?;
+                }
+
+                // Worktree参照を削除（git worktree pruneに相当）
+                // git2クレートではdirectに削除するAPIがないため、ベストエフォートで削除
+                println!("🗑️ Workspace removed: {}", workspace_name);
+                println!("Note: Git worktree reference may need manual cleanup with 'git worktree prune'");
+                Ok(())
+            } else {
+                Err(format!(
+                    "ワークスペースパスが取得できません: {}",
+                    workspace_name
+                ))
+            }
+        } else {
+            Err(format!(
+                "ワークスペースが見つかりません: {}",
+                workspace_name
+            ))
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static TEST_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+    // テスト用のユニークなワークスペース名を生成
+    fn generate_test_workspace_name(prefix: &str) -> String {
+        let counter = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+        let timestamp = crate::utils::generate_timestamp();
+        format!("{}-test-{}-{}", timestamp, counter, prefix)
+    }
+
+    // テスト完了時にワークスペースをクリーンアップ
+    fn cleanup_test_workspace(manager: &WorkspaceManager, workspace_name: &str) {
+        if let Err(e) = manager.remove_workspace(workspace_name) {
+            eprintln!(
+                "Warning: Failed to cleanup test workspace {}: {}",
+                workspace_name, e
+            );
+        }
+    }
 
     #[test]
     fn test_workspace_manager_new_in_git_repo() {
@@ -368,6 +419,47 @@ mod tests {
             // 基本的な操作が可能であることを確認
             let list_result = manager.list_workspaces();
             assert!(list_result.is_ok());
+        }
+    }
+
+    #[test]
+    fn test_create_and_remove_workspace_integration() {
+        if let Ok(manager) = WorkspaceManager::new() {
+            let workspace_name = generate_test_workspace_name("integration");
+            let base_dir = "../test-workspaces";
+            let branch_prefix = "test/";
+
+            // ワークスペースを作成
+            let result = manager.create_workspace(&workspace_name, base_dir, branch_prefix);
+
+            match result {
+                Ok(workspace_info) => {
+                    // 作成成功の場合、削除でクリーンアップ
+                    assert!(workspace_info.name.contains(&workspace_name));
+                    assert!(workspace_info.path.contains(base_dir));
+                    assert!(workspace_info.branch.starts_with(branch_prefix));
+
+                    // 作成されたワークスペースを削除
+                    // ワークスペース名はタイムスタンプ-タスク名の形式なのでそのまま使用
+                    cleanup_test_workspace(&manager, &workspace_info.name);
+                }
+                Err(_) => {
+                    // エラーの場合は作成されていないのでクリーンアップ不要
+                    println!("Workspace creation failed (expected in some test environments)");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_remove_nonexistent_workspace() {
+        if let Ok(manager) = WorkspaceManager::new() {
+            let result = manager.remove_workspace("nonexistent-workspace-12345");
+            assert!(result.is_err());
+
+            if let Err(error_msg) = result {
+                assert!(error_msg.contains("ワークスペースが見つかりません"));
+            }
         }
     }
 }
