@@ -160,14 +160,14 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
 ### Phase 2: 設定ファイル機能の実装
 
 #### Task 2-1: 設定ファイル構造体の定義
-- [ ] **目的**: 設定ファイルのデータ構造を定義
+- [x] **目的**: 設定ファイルのデータ構造を定義
 - **詳細実装手順**:
-  1. [ ] `Cargo.toml`に以下を追加:
+  1. [x] `Cargo.toml`に以下を追加:
      ```toml
      serde = { version = "1.0", features = ["derive"] }
      serde_yaml = "0.9"
      ```
-  2. [ ] `src/config.rs`を以下に更新:
+  2. [x] `src/config.rs`を以下に更新:
      ```rust
      use serde::{Deserialize, Serialize};
      
@@ -202,7 +202,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          WorkspaceConfig::default()
      }
      ```
-  3. [ ] デフォルト設定でのYAML出力テスト用に一時的な関数を追加:
+  3. [x] デフォルト設定でのYAML出力テスト用に一時的な関数を追加:
      ```rust
      pub fn _test_serialize() {
          let config = WorkspaceConfig::default();
@@ -210,16 +210,16 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          println!("Default config YAML:\n{}", yaml);
      }
      ```
-  4. [ ] `cargo check`でコンパイル確認
-  5. [ ] テスト実行で構造体の動作確認
+  4. [x] `cargo check`でコンパイル確認
+  5. [x] テスト実行で構造体の動作確認
 - **完了条件**: 
-  - [ ] 設定構造体が正常に定義されserialize/deserializeできる
-  - [ ] デフォルト値で初期化できる
+  - [x] 設定構造体が正常に定義されserialize/deserializeできる
+  - [x] デフォルト値で初期化できる
 
 #### Task 2-2: 設定ファイル読み込み機能
-- [ ] **目的**: YAMLファイルから設定を読み込む
+- [x] **目的**: YAMLファイルから設定を読み込む
 - **詳細実装手順**:
-  1. [ ] `src/config.rs`の`load_config`関数を実装:
+  1. [x] `src/config.rs`の`load_config`関数を実装:
      ```rust
      use std::fs;
      use std::path::Path;
@@ -254,7 +254,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          }
      }
      ```
-  2. [ ] テスト用の設定ファイル`test-workspace.yml`を作成:
+  2. [x] テスト用の設定ファイル`test-workspace.yml`を作成:
      ```yaml
      workspace:
        base_dir: "../test-workspaces"
@@ -265,7 +265,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
        pre_commands:
          - "echo 'setup complete'"
      ```
-  3. [ ] CLI引数に設定ファイルパスオプションを追加:
+  3. [x] CLI引数に設定ファイルパスオプションを追加:
      ```rust
      // src/cli.rs
      #[derive(Subcommand)]
@@ -281,7 +281,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          },
      }
      ```
-  4. [ ] `src/main.rs`を更新して設定ファイルパスを使用:
+  4. [x] `src/main.rs`を更新して設定ファイルパスを使用:
      ```rust
      match cli.command {
          Commands::Start { task_name, config } => {
@@ -298,14 +298,14 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          }
      }
      ```
-  5. [ ] テスト実行:
+  5. [x] テスト実行:
      - `cargo run -- start test --config test-workspace.yml`
      - `cargo run -- start test` (デフォルト設定)
      - `cargo run -- start test --config nonexistent.yml` (エラーケース)
 - **完了条件**: 
-  - [ ] 設定ファイルが正常に読み込める
-  - [ ] 存在しないファイルでもエラーにならずデフォルト設定で動作する
-  - [ ] YAML解析エラー時もデフォルト設定で動作する
+  - [x] 設定ファイルが正常に読み込める
+  - [x] 存在しないファイルでもエラーにならずデフォルト設定で動作する
+  - [x] YAML解析エラー時もデフォルト設定で動作する
 
 ### Phase 3: Git Worktree機能の実装
 
@@ -1018,12 +1018,12 @@ worktreeの作成が可能な状態
 ## 全タスク一覧（チェックリスト）
 
 ### Phase 1: 基本CLI構造の構築
-- [ ] Task 1-1: 基本CLIフレームワークの実装
-- [ ] Task 1-2: プロジェクト構造の整備
+- [x] Task 1-1: 基本CLIフレームワークの実装
+- [x] Task 1-2: プロジェクト構造の整備
 
 ### Phase 2: 設定ファイル機能の実装  
-- [ ] Task 2-1: 設定ファイル構造体の定義
-- [ ] Task 2-2: 設定ファイル読み込み機能
+- [x] Task 2-1: 設定ファイル構造体の定義
+- [x] Task 2-2: 設定ファイル読み込み機能
 
 ### Phase 3: Git Worktree機能の実装
 - [ ] Task 3-1: Git操作の基本実装

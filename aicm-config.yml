@@ -1,0 +1,25 @@
+# aicm Configuration File
+# AI Context Management Tool - Configuration for multiple AI coding agents
+# For more information: https://github.com/morooka-akira/aicm
+
+# Configuration file version
+version: "1.0"
+output_mode: merged
+base_docs_dir: ./ai-docs/rules
+
+# Agent configurations
+agents:
+  # Cursor IDE Agent - Generates .cursor/rules/*.mdc files
+  cursor:
+    output_mode: split # Override global setting for Cursor
+
+  claude:
+    import_files:
+      - path: "./ai-docs/rules/02_rust.md"
+        note: "Rustコードの実装や修正を行うときに参照"
+      - path: "./ai-docs/rules/03_project_rule.md"
+        note: "作業を開始するときに必ず参照すること"
+      - path: "./ai-docs/designs/design.md"
+        note: "実装設計を確認するときに参照"
+      - path: "./ai-docs/designs/tasks.md"
+        note: "タスクの詳細と進捗を確認するときに参照"

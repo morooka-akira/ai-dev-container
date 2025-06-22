@@ -1,0 +1,38 @@
+# Rust開発ルール
+
+Rust ファイルを参照する場合は、以下を必ず参照してください。
+
+## 共通コマンド
+
+```bash
+# プロジェクトをビルド
+cargo build
+
+# アプリケーションを実行
+cargo run
+
+# リリースモードでビルドして実行
+cargo run --release
+
+# テストを実行
+cargo test
+
+# 特定のテストを実行
+cargo test test_name
+
+# ビルドせずにコードをチェック
+cargo check
+
+# コードをフォーマット
+cargo fmt
+
+# リンターを実行
+cargo clippy --all-targets -- -D warnings
+```
+
+## Rust開発における注意点
+
+- コードの品質を保つため、cargo fmt、cargo clippy は必ず実行してください
+- テストは必ず書いてください
+- エラーハンドリングを適切に行ってください
+- ドキュメントコメントを適切に記述してください

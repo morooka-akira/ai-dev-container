@@ -35,16 +35,3 @@ git の worktree の管理を TUI で行い、workspace を柔軟に管理する
 
 ### 次のステップ
 現在Task 3-1（Git操作の基本実装）を準備中です。
-
-
-# Rustコードの実装や修正を行うときに参照
-@./ai-docs/rules/02_rust.md
-
-# 作業を開始するときに必ず参照すること
-@./ai-docs/rules/03_project_rule.md
-
-# 実装設計を確認するときに参照
-@./ai-docs/designs/design.md
-
-# タスクの詳細と進捗を確認するときに参照
-@./ai-docs/designs/tasks.md
