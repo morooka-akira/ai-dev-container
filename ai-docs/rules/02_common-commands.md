@@ -59,14 +59,14 @@ git worktree list
 実装完了後は必ず以下を実行:
 
 ```bash
-# 1. フォーマット
-cargo fmt
+# 1. テスト実行
+cargo test
 
 # 2. 警告チェック
 cargo clippy --all-targets -- -D warnings
 
-# 3. テスト実行
-cargo test
+# 3. フォーマット
+cargo fmt
 
 # 4. PRの作成
 gh pr create
