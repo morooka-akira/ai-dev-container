@@ -46,16 +46,44 @@ This creates:
 
 ### 2. List and Manage Workspaces
 
+**Important**: To navigate to workspaces, shell function setup is required.
+
+#### Shell Function Setup (One-time only)
+
+Add the following to your `.bashrc` or `.zshrc`:
+
 ```bash
-ai-workspace list
+# Select and navigate to workspace via TUI
+awl() {
+    local target_path
+    target_path=$(gwork list)
+    if [ -n "$target_path" ]; then
+        cd "$target_path"
+    fi
+}
 ```
 
-Opens an interactive TUI where you can:
+After setup, restart your shell or run:
+```bash
+source ~/.bashrc  # or source ~/.zshrc
+```
+
+#### Usage
+
+```bash
+awl  # Opens TUI to select and navigate to workspace
+```
+
+**TUI Controls**:
 - Navigate through workspaces with ↑/↓ or j/k
-- Press Enter to switch to a workspace
-- Press 'd' to delete a workspace
-- Press 'i' for detailed information
+- **Press Enter to navigate to workspace**
 - Press 'q' to quit
+
+**Direct execution won't navigate**:
+```bash
+# ❌ This won't change directory
+gwork list
+```
 
 ## ⚙️ Configuration
 

@@ -46,16 +46,44 @@ ai-workspace start feature-authentication
 
 ### 2. ワークスペースの一覧表示と管理
 
+**重要**: ワークスペースに移動するには、シェル関数の設定が必要です。
+
+#### シェル関数の設定（初回のみ）
+
+`.bashrc` または `.zshrc` に以下を追加：
+
 ```bash
-ai-workspace list
+# TUIでワークスペースを選択して移動
+awl() {
+    local target_path
+    target_path=$(gwork list)
+    if [ -n "$target_path" ]; then
+        cd "$target_path"
+    fi
+}
 ```
 
-インタラクティブなTUIが開き、以下の操作が可能です：
+設定後、シェルを再起動するか以下を実行：
+```bash
+source ~/.bashrc  # または source ~/.zshrc
+```
+
+#### 使用方法
+
+```bash
+awl  # TUIでワークスペースを選択して移動
+```
+
+**TUI操作**：
 - ↑/↓ または j/k でワークスペースをナビゲート
-- Enter を押してワークスペースに切り替え
-- 'd' を押してワークスペースを削除
-- 'i' を押して詳細情報を表示
+- **Enter を押してワークスペースに移動**
 - 'q' を押して終了
+
+**直接実行では移動しません**：
+```bash
+# ❌ これではディレクトリ移動しません
+gwork list
+```
 
 ## ⚙️ 設定
 
