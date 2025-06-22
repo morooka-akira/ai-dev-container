@@ -1,11 +1,22 @@
 version: "1.0"
 output_mode: split
-base_docs_dir: ./ai-docs/contexts
+base_docs_dir: ./ai-docs/rules
 agents:
+  cursor:
+    output_mode: split
   claude:
     import_files:
-      - path: "./ai-docs/contexts/03_working-rules.md"
-        note: "作業を開始するときに参照すること"
-      - path: "./ai-docs/contexts/06_rust-rule.md"
+      - path: "./ai-docs/rules/02_common-commands.md"
+        note: "Cargoコマンドやアプリケーションコマンドを確認するときに参照"
+      - path: "./ai-docs/rules/03_working-rules.md"
+        note: "作業を開始するときに必ず参照すること"
+      - path: "./ai-docs/rules/04_current-state.md"
+        note: "現在の実装状況と進捗を確認するときに参照"
+      - path: "./ai-docs/rules/05_language-specific.md"
+        note: "Rust言語固有の設定や慣習を確認するときに参照"
+      - path: "./ai-docs/rules/06_rust-rule.md"
         note: "Rustファイルの編集をするときに参照すること"
-
+      - path: "./ai-docs/designs/design.md"
+        note: "実装設計と仕様を確認するときに参照"
+      - path: "./ai-docs/designs/tasks.md"
+        note: "タスクの詳細と進捗を確認するときに参照"

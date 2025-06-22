@@ -1,3 +1,9 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
 # プロジェクト概要
 
 ## 基本情報
@@ -43,25 +49,3 @@ src/
 - [ ] Git Worktree機能
 - [ ] TUI機能
 - [ ] ファイル操作機能
-
-
-# Cargoコマンドやアプリケーションコマンドを確認するときに参照
-@./ai-docs/rules/02_common-commands.md
-
-# 作業を開始するときに必ず参照すること
-@./ai-docs/rules/03_working-rules.md
-
-# 現在の実装状況と進捗を確認するときに参照
-@./ai-docs/rules/04_current-state.md
-
-# Rust言語固有の設定や慣習を確認するときに参照
-@./ai-docs/rules/05_language-specific.md
-
-# Rustファイルの編集をするときに参照すること
-@./ai-docs/rules/06_rust-rule.md
-
-# 実装設計と仕様を確認するときに参照
-@./ai-docs/designs/design.md
-
-# タスクの詳細と進捗を確認するときに参照
-@./ai-docs/designs/tasks.md
