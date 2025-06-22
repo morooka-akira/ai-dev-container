@@ -174,9 +174,10 @@ src/
 - [x] Basic CLI framework
 - [x] Git worktree integration
 - [x] Configuration file support
-- [ ] Interactive TUI
-- [ ] Workspace deletion
-- [ ] Detailed workspace information
+- [x] File copying functionality
+- [x] Interactive TUI (basic)
+- [ ] Pre-command execution
+- [ ] Advanced TUI features (deletion, details)
 - [ ] Shell integration helpers
 - [ ] Workspace templates
 - [ ] Synchronization commands

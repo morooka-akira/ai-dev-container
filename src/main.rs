@@ -25,10 +25,11 @@ fn main() {
             let config = load_config_from_path(&config);
             println!("start コマンドが実行されました: {}", task_name);
 
-            match workspace_manager.create_workspace(
+            match workspace_manager.create_workspace_with_config(
                 &task_name,
                 &config.workspace.base_dir,
                 &config.workspace.branch_prefix,
+                &config.workspace.copy_files,
             ) {
                 Ok(info) => println!("✅ ワークスペース準備完了: {:?}", info),
                 Err(e) => eprintln!("❌ エラー: {}", e),

@@ -22,11 +22,22 @@ impl WorkspaceManager {
         Ok(Self { repo })
     }
 
+    #[allow(dead_code)]
     pub fn create_workspace(
         &self,
         task_name: &str,
         base_dir: &str,
         branch_prefix: &str,
+    ) -> Result<WorkspaceInfo, String> {
+        self.create_workspace_with_config(task_name, base_dir, branch_prefix, &[])
+    }
+
+    pub fn create_workspace_with_config(
+        &self,
+        task_name: &str,
+        base_dir: &str,
+        branch_prefix: &str,
+        copy_files: &[String],
     ) -> Result<WorkspaceInfo, String> {
         let timestamp = crate::utils::generate_timestamp();
         let workspace_name = format!("{}-{}", timestamp, task_name);
@@ -73,6 +84,12 @@ impl WorkspaceManager {
             .set_head(&format!("refs/heads/{}", branch_name))
             .map_err(|e| format!("ブランチ切り替えエラー: {}", e))?;
 
+        // ファイルコピー処理
+        if !copy_files.is_empty() {
+            println!("\n📄 Copying files...");
+            self.copy_files(Path::new("."), Path::new(&workspace_path), copy_files);
+        }
+
         println!("✅ Workspace created successfully!");
         println!("📁 Path: {}", workspace_path);
         println!("🌿 Branch: {}", branch_name);
@@ -84,6 +101,39 @@ impl WorkspaceManager {
             path: workspace_path,
             branch: branch_name,
         })
+    }
+
+    fn copy_files(&self, source_repo_path: &Path, workspace_path: &Path, copy_files: &[String]) {
+        for file_path in copy_files {
+            let source_path = source_repo_path.join(file_path);
+            let dest_path = workspace_path.join(file_path);
+
+            // ソースファイルが存在しない場合はスキップ
+            if !source_path.exists() {
+                println!("  ⚠️  ファイルが見つかりません: {} (スキップ)", file_path);
+                continue;
+            }
+
+            // デスティネーションディレクトリの作成
+            if let Some(parent) = dest_path.parent() {
+                if !parent.exists() {
+                    if let Err(e) = fs::create_dir_all(parent) {
+                        println!("  ❌ ディレクトリ作成エラー: {} - {}", parent.display(), e);
+                        continue;
+                    }
+                }
+            }
+
+            // ファイルをコピー
+            match fs::copy(&source_path, &dest_path) {
+                Ok(_) => {
+                    println!("  ✅ コピー完了: {}", file_path);
+                }
+                Err(e) => {
+                    println!("  ❌ コピーエラー: {} - {}", file_path, e);
+                }
+            }
+        }
     }
 
     pub fn list_workspaces(&self) -> Result<Vec<WorkspaceInfo>, String> {
@@ -227,6 +277,7 @@ impl WorkspaceManager {
 mod tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
+    use tempfile::TempDir;
 
     static TEST_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
@@ -582,6 +633,89 @@ mod tests {
             if let Err(error_msg) = result {
                 assert!(error_msg.contains("ワークスペースが見つかりません"));
             }
+        }
+    }
+
+    #[test]
+    fn test_copy_files_function() {
+        if let Ok(manager) = WorkspaceManager::new() {
+            // 一時ディレクトリを作成
+            let temp_dir = TempDir::new().unwrap();
+            let source_dir = temp_dir.path();
+            let dest_dir = temp_dir.path().join("dest");
+            fs::create_dir_all(&dest_dir).unwrap();
+
+            // テストファイルを作成
+            let test_file1 = source_dir.join("test1.txt");
+            fs::write(&test_file1, "test content 1").unwrap();
+
+            let test_file2 = source_dir.join("dir/test2.txt");
+            fs::create_dir_all(test_file2.parent().unwrap()).unwrap();
+            fs::write(&test_file2, "test content 2").unwrap();
+
+            // コピー対象ファイルのリスト
+            let copy_files = vec![
+                "test1.txt".to_string(),
+                "dir/test2.txt".to_string(),
+                "nonexistent.txt".to_string(), // 存在しないファイル
+            ];
+
+            // ファイルをコピー
+            manager.copy_files(source_dir, &dest_dir, &copy_files);
+
+            // 検証
+            assert!(dest_dir.join("test1.txt").exists());
+            assert!(dest_dir.join("dir/test2.txt").exists());
+            assert!(!dest_dir.join("nonexistent.txt").exists());
+
+            // ファイル内容の確認
+            let content1 = fs::read_to_string(dest_dir.join("test1.txt")).unwrap();
+            assert_eq!(content1, "test content 1");
+
+            let content2 = fs::read_to_string(dest_dir.join("dir/test2.txt")).unwrap();
+            assert_eq!(content2, "test content 2");
+        }
+    }
+
+    #[test]
+    fn test_copy_files_with_nested_directories() {
+        if let Ok(manager) = WorkspaceManager::new() {
+            let temp_dir = TempDir::new().unwrap();
+            let source_dir = temp_dir.path();
+            let dest_dir = temp_dir.path().join("workspace");
+            fs::create_dir_all(&dest_dir).unwrap();
+
+            // ネストしたディレクトリ構造のテストファイルを作成
+            let nested_file = source_dir.join("config/nested/deep/file.yml");
+            fs::create_dir_all(nested_file.parent().unwrap()).unwrap();
+            fs::write(&nested_file, "nested: true").unwrap();
+
+            let copy_files = vec!["config/nested/deep/file.yml".to_string()];
+
+            // ファイルをコピー
+            manager.copy_files(source_dir, &dest_dir, &copy_files);
+
+            // 検証
+            let dest_file = dest_dir.join("config/nested/deep/file.yml");
+            assert!(dest_file.exists());
+            assert_eq!(fs::read_to_string(dest_file).unwrap(), "nested: true");
+        }
+    }
+
+    #[test]
+    fn test_copy_files_empty_list() {
+        if let Ok(manager) = WorkspaceManager::new() {
+            let temp_dir = TempDir::new().unwrap();
+            let source_dir = temp_dir.path();
+            let dest_dir = temp_dir.path().join("empty_dest");
+            fs::create_dir_all(&dest_dir).unwrap();
+
+            // 空のリストでコピー処理を実行
+            let copy_files: Vec<String> = vec![];
+            manager.copy_files(source_dir, &dest_dir, &copy_files);
+
+            // エラーが発生しないことを確認（パニックしない）
+            assert!(dest_dir.exists());
         }
     }
 }
