@@ -36,18 +36,43 @@ fn main() {
                 Err(e) => eprintln!("❌ エラー: {}", e),
             }
         }
-        Commands::List { config } => {
+        Commands::List {
+            config,
+            print_path_only,
+        } => {
             let _config = load_config_from_path(&config);
-            println!("TUIモードを開始します...");
 
-            if let Err(e) = run_tui() {
-                eprintln!("TUIエラー: {}", e);
+            if print_path_only {
+                // --print-path-onlyモード: 最初のワークスペースのパスを出力
+                if let Ok(workspace_manager) = WorkspaceManager::new() {
+                    if let Ok(workspaces) = workspace_manager.list_workspaces() {
+                        if let Some(first_workspace) = workspaces.first() {
+                            println!("{}", first_workspace.path);
+                        }
+                    }
+                }
+            } else {
+                // 通常のTUIモード
+                println!("TUIモードを開始します...");
+
+                match run_tui() {
+                    Ok(Some(selected_path)) => {
+                        // Enterキーで選択されたパスを出力
+                        println!("{}", selected_path);
+                    }
+                    Ok(None) => {
+                        // 何も選択せずに終了
+                    }
+                    Err(e) => {
+                        eprintln!("TUIエラー: {}", e);
+                    }
+                }
             }
         }
     }
 }
 
-fn run_tui() -> std::io::Result<()> {
+fn run_tui() -> std::io::Result<Option<String>> {
     use crossterm::{
         event::{DisableMouseCapture, EnableMouseCapture},
         execute,
@@ -78,7 +103,7 @@ fn run_tui() -> std::io::Result<()> {
                 DisableMouseCapture
             )?;
             eprintln!("ワークスペース管理の初期化エラー: {}", e);
-            return Ok(());
+            return Ok(None);
         }
     };
 
@@ -88,14 +113,15 @@ fn run_tui() -> std::io::Result<()> {
     }
 
     // Main loop
-    loop {
+    let selected_path = loop {
         terminal.draw(|f| tui::ui::draw(f, &app))?;
-        tui::events::handle_events(&mut app)?;
 
-        if app.should_quit {
-            break;
+        match tui::events::handle_events(&mut app)? {
+            tui::events::AppAction::Quit => break None,
+            tui::events::AppAction::NavigateToWorkspace(path) => break Some(path),
+            tui::events::AppAction::None => {}
         }
-    }
+    };
 
     // Cleanup
     disable_raw_mode()?;
@@ -106,5 +132,5 @@ fn run_tui() -> std::io::Result<()> {
     )?;
     terminal.show_cursor()?;
 
-    Ok(())
+    Ok(selected_path)
 }

@@ -177,6 +177,7 @@ src/
 - [x] File copying functionality
 - [x] Pre-command execution
 - [x] Interactive TUI (basic)
+- [x] TUI navigation features (Enter key navigation)
 - [ ] Advanced TUI features (deletion, details)
 - [ ] Shell integration helpers
 - [ ] Workspace templates

@@ -28,7 +28,7 @@ pub fn draw(f: &mut Frame, app: &App) {
     f.render_widget(header, chunks[0]);
 
     // Help text
-    let help_text = Paragraph::new("↑/↓: 選択  q: 終了")
+    let help_text = Paragraph::new("↑/↓: 選択  Enter: 開く  q: 終了")
         .style(Style::default().fg(Color::Gray))
         .block(Block::default().borders(Borders::ALL));
 

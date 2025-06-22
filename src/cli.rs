@@ -20,6 +20,8 @@ pub enum Commands {
     List {
         #[arg(short, long, default_value = DEFAULT_CONFIG_FILE)]
         config: String,
+        #[arg(long, help = "Print selected workspace path only")]
+        print_path_only: bool,
     },
 }
 
@@ -86,8 +88,12 @@ mod tests {
         let cli = Cli::try_parse_from(args).unwrap();
 
         match cli.command {
-            Commands::List { config } => {
+            Commands::List {
+                config,
+                print_path_only,
+            } => {
                 assert_eq!(config, DEFAULT_CONFIG_FILE); // デフォルト値
+                assert!(!print_path_only); // デフォルトはfalse
             }
             _ => panic!("Expected List command"),
         }
@@ -100,8 +106,54 @@ mod tests {
         let cli = Cli::try_parse_from(args).unwrap();
 
         match cli.command {
-            Commands::List { config } => {
+            Commands::List {
+                config,
+                print_path_only,
+            } => {
                 assert_eq!(config, "custom.yml");
+                assert!(!print_path_only); // デフォルトはfalse
+            }
+            _ => panic!("Expected List command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_list_command_with_print_path_only() {
+        // list コマンドに--print-path-onlyフラグを指定
+        let args = vec!["ai-workspace", "list", "--print-path-only"];
+        let cli = Cli::try_parse_from(args).unwrap();
+
+        match cli.command {
+            Commands::List {
+                config,
+                print_path_only,
+            } => {
+                assert_eq!(config, DEFAULT_CONFIG_FILE);
+                assert!(print_path_only);
+            }
+            _ => panic!("Expected List command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_list_command_with_both_options() {
+        // list コマンドに両方のオプションを指定
+        let args = vec![
+            "ai-workspace",
+            "list",
+            "--config",
+            "test.yml",
+            "--print-path-only",
+        ];
+        let cli = Cli::try_parse_from(args).unwrap();
+
+        match cli.command {
+            Commands::List {
+                config,
+                print_path_only,
+            } => {
+                assert_eq!(config, "test.yml");
+                assert!(print_path_only);
             }
             _ => panic!("Expected List command"),
         }
