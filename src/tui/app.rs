@@ -4,6 +4,7 @@ pub struct App {
     pub should_quit: bool,
     pub workspaces: Vec<WorkspaceInfo>,
     pub selected_index: usize,
+    pub show_delete_dialog: bool,
 }
 
 impl App {
@@ -12,6 +13,7 @@ impl App {
             should_quit: false,
             workspaces: Vec::new(),
             selected_index: 0,
+            show_delete_dialog: false,
         }
     }
 
@@ -49,6 +51,28 @@ impl App {
     pub fn quit(&mut self) {
         self.should_quit = true;
     }
+
+    pub fn show_delete_confirmation(&mut self) {
+        self.show_delete_dialog = true;
+    }
+
+    pub fn hide_delete_confirmation(&mut self) {
+        self.show_delete_dialog = false;
+    }
+
+    pub fn is_in_delete_confirmation(&self) -> bool {
+        self.show_delete_dialog
+    }
+
+    pub fn remove_workspace(&mut self, workspace_name: &str) {
+        self.workspaces.retain(|w| w.name != workspace_name);
+        // 選択インデックスの調整
+        if self.selected_index >= self.workspaces.len() && !self.workspaces.is_empty() {
+            self.selected_index = self.workspaces.len() - 1;
+        } else if self.workspaces.is_empty() {
+            self.selected_index = 0;
+        }
+    }
 }
 
 #[cfg(test)]
@@ -62,6 +86,7 @@ mod tests {
         assert!(!app.should_quit);
         assert!(app.workspaces.is_empty());
         assert_eq!(app.selected_index, 0);
+        assert!(!app.show_delete_dialog);
     }
 
     #[test]
@@ -137,5 +162,68 @@ mod tests {
         let app = App::new();
         let selected = app.get_selected_workspace();
         assert!(selected.is_none());
+    }
+
+    #[test]
+    fn test_delete_confirmation_dialog() {
+        let mut app = App::new();
+        assert!(!app.is_in_delete_confirmation());
+
+        app.show_delete_confirmation();
+        assert!(app.is_in_delete_confirmation());
+
+        app.hide_delete_confirmation();
+        assert!(!app.is_in_delete_confirmation());
+    }
+
+    #[test]
+    fn test_remove_workspace() {
+        let mut app = App::new();
+        app.workspaces = vec![
+            WorkspaceInfo {
+                name: "workspace1".to_string(),
+                path: "/path1".to_string(),
+                branch: "branch1".to_string(),
+            },
+            WorkspaceInfo {
+                name: "workspace2".to_string(),
+                path: "/path2".to_string(),
+                branch: "branch2".to_string(),
+            },
+        ];
+
+        // 最初のワークスペースを削除
+        app.remove_workspace("workspace1");
+        assert_eq!(app.workspaces.len(), 1);
+        assert_eq!(app.workspaces[0].name, "workspace2");
+        assert_eq!(app.selected_index, 0);
+
+        // 残りのワークスペースを削除
+        app.remove_workspace("workspace2");
+        assert_eq!(app.workspaces.len(), 0);
+        assert_eq!(app.selected_index, 0);
+    }
+
+    #[test]
+    fn test_remove_workspace_adjust_selection() {
+        let mut app = App::new();
+        app.workspaces = vec![
+            WorkspaceInfo {
+                name: "workspace1".to_string(),
+                path: "/path1".to_string(),
+                branch: "branch1".to_string(),
+            },
+            WorkspaceInfo {
+                name: "workspace2".to_string(),
+                path: "/path2".to_string(),
+                branch: "branch2".to_string(),
+            },
+        ];
+
+        // 2番目を選択してから1番目を削除
+        app.selected_index = 1;
+        app.remove_workspace("workspace1");
+        assert_eq!(app.workspaces.len(), 1);
+        assert_eq!(app.selected_index, 0); // インデックスが調整される
     }
 }

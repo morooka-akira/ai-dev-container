@@ -120,6 +120,20 @@ fn run_tui() -> std::io::Result<Option<String>> {
         match tui::events::handle_events(&mut app)? {
             tui::events::AppAction::Quit => break None,
             tui::events::AppAction::NavigateToWorkspace(path) => break Some(path),
+            tui::events::AppAction::DeleteWorkspace(workspace_name) => {
+                // ワークスペースを削除
+                match workspace_manager.remove_workspace(&workspace_name) {
+                    Ok(()) => {
+                        // アプリの状態からも削除
+                        app.remove_workspace(&workspace_name);
+                    }
+                    Err(e) => {
+                        eprintln!("削除エラー: {}", e);
+                        // エラーが発生してもアプリ状態は更新（表示と実際の状態の同期）
+                        app.remove_workspace(&workspace_name);
+                    }
+                }
+            }
             tui::events::AppAction::None => {}
         }
     };

@@ -7,6 +7,7 @@ pub enum AppAction {
     None,
     Quit,
     NavigateToWorkspace(String), // パスを返す
+    DeleteWorkspace(String),     // 削除するワークスペース名
 }
 
 pub fn handle_events(app: &mut App) -> std::io::Result<AppAction> {
@@ -14,23 +15,60 @@ pub fn handle_events(app: &mut App) -> std::io::Result<AppAction> {
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') | KeyCode::Esc => {
-                    app.quit();
-                    Ok(AppAction::Quit)
+                    if app.is_in_delete_confirmation() {
+                        app.hide_delete_confirmation();
+                        Ok(AppAction::None)
+                    } else {
+                        app.quit();
+                        Ok(AppAction::Quit)
+                    }
                 }
                 KeyCode::Down | KeyCode::Char('j') => {
-                    app.next();
+                    if !app.is_in_delete_confirmation() {
+                        app.next();
+                    }
                     Ok(AppAction::None)
                 }
                 KeyCode::Up | KeyCode::Char('k') => {
-                    app.previous();
+                    if !app.is_in_delete_confirmation() {
+                        app.previous();
+                    }
                     Ok(AppAction::None)
                 }
                 KeyCode::Enter => {
-                    if let Some(workspace) = app.get_selected_workspace() {
+                    if app.is_in_delete_confirmation() {
+                        // 削除確認ダイアログでのEnterキー処理
+                        Ok(AppAction::None)
+                    } else if let Some(workspace) = app.get_selected_workspace() {
                         Ok(AppAction::NavigateToWorkspace(workspace.path.clone()))
                     } else {
                         Ok(AppAction::None)
                     }
+                }
+                KeyCode::Char('d') => {
+                    if !app.is_in_delete_confirmation() && app.get_selected_workspace().is_some() {
+                        app.show_delete_confirmation();
+                    }
+                    Ok(AppAction::None)
+                }
+                KeyCode::Char('y') | KeyCode::Char('Y') => {
+                    if app.is_in_delete_confirmation() {
+                        if let Some(workspace) = app.get_selected_workspace() {
+                            let workspace_name = workspace.name.clone();
+                            app.hide_delete_confirmation();
+                            Ok(AppAction::DeleteWorkspace(workspace_name))
+                        } else {
+                            Ok(AppAction::None)
+                        }
+                    } else {
+                        Ok(AppAction::None)
+                    }
+                }
+                KeyCode::Char('n') | KeyCode::Char('N') => {
+                    if app.is_in_delete_confirmation() {
+                        app.hide_delete_confirmation();
+                    }
+                    Ok(AppAction::None)
                 }
                 _ => Ok(AppAction::None),
             }
@@ -74,11 +112,19 @@ mod tests {
             AppAction::NavigateToWorkspace("/test/path".to_string()),
             AppAction::NavigateToWorkspace("/test/path".to_string())
         );
+        assert_eq!(
+            AppAction::DeleteWorkspace("workspace1".to_string()),
+            AppAction::DeleteWorkspace("workspace1".to_string())
+        );
 
         assert_ne!(AppAction::None, AppAction::Quit);
         assert_ne!(
             AppAction::NavigateToWorkspace("/test/path1".to_string()),
             AppAction::NavigateToWorkspace("/test/path2".to_string())
+        );
+        assert_ne!(
+            AppAction::DeleteWorkspace("workspace1".to_string()),
+            AppAction::DeleteWorkspace("workspace2".to_string())
         );
     }
 
@@ -137,5 +183,37 @@ mod tests {
         // 上方向キーのテスト
         app.previous();
         assert_eq!(app.selected_index, 0);
+    }
+
+    #[test]
+    fn test_delete_confirmation_flow() {
+        let mut app = create_test_app_with_workspaces();
+
+        // 削除確認ダイアログの表示
+        assert!(!app.is_in_delete_confirmation());
+        app.show_delete_confirmation();
+        assert!(app.is_in_delete_confirmation());
+
+        // 削除確認中のナビゲーション制御をアプリロジックで確認
+        // （実際のキーイベントの無効化はevents.rsのhandle_eventsで実装されている）
+        assert!(app.is_in_delete_confirmation());
+
+        // キャンセル
+        app.hide_delete_confirmation();
+        assert!(!app.is_in_delete_confirmation());
+    }
+
+    #[test]
+    fn test_delete_workspace_action() {
+        let app = create_test_app_with_workspaces();
+
+        // 選択されたワークスペースが削除アクションで返される
+        if let Some(workspace) = app.get_selected_workspace() {
+            let expected_action = AppAction::DeleteWorkspace(workspace.name.clone());
+            assert_eq!(
+                expected_action,
+                AppAction::DeleteWorkspace("test1".to_string())
+            );
+        }
     }
 }
