@@ -31,7 +31,7 @@ mod tests {
         // start コマンドのパース
         let args = vec!["ai-workspace", "start", "test-task"];
         let cli = Cli::try_parse_from(args).unwrap();
-        
+
         match cli.command {
             Commands::Start { task_name, config } => {
                 assert_eq!(task_name, "test-task");
@@ -44,9 +44,15 @@ mod tests {
     #[test]
     fn test_cli_start_command_with_config() {
         // start コマンドにconfig引数を指定
-        let args = vec!["ai-workspace", "start", "test-task", "--config", "custom.yml"];
+        let args = vec![
+            "ai-workspace",
+            "start",
+            "test-task",
+            "--config",
+            "custom.yml",
+        ];
         let cli = Cli::try_parse_from(args).unwrap();
-        
+
         match cli.command {
             Commands::Start { task_name, config } => {
                 assert_eq!(task_name, "test-task");
@@ -61,7 +67,7 @@ mod tests {
         // start コマンドに短縮形のconfig引数を指定
         let args = vec!["ai-workspace", "start", "test-task", "-c", "short.yml"];
         let cli = Cli::try_parse_from(args).unwrap();
-        
+
         match cli.command {
             Commands::Start { task_name, config } => {
                 assert_eq!(task_name, "test-task");
@@ -76,7 +82,7 @@ mod tests {
         // list コマンドのパース
         let args = vec!["ai-workspace", "list"];
         let cli = Cli::try_parse_from(args).unwrap();
-        
+
         match cli.command {
             Commands::List { config } => {
                 assert_eq!(config, "workspace.yml"); // デフォルト値
@@ -90,7 +96,7 @@ mod tests {
         // list コマンドにconfig引数を指定
         let args = vec!["ai-workspace", "list", "--config", "custom.yml"];
         let cli = Cli::try_parse_from(args).unwrap();
-        
+
         match cli.command {
             Commands::List { config } => {
                 assert_eq!(config, "custom.yml");
@@ -124,13 +130,16 @@ mod tests {
             "task123",
             "UPPERCASE_TASK",
         ];
-        
+
         for task_name in test_cases {
             let args = vec!["ai-workspace", "start", task_name];
             let cli = Cli::try_parse_from(args).unwrap();
-            
+
             match cli.command {
-                Commands::Start { task_name: parsed_name, .. } => {
+                Commands::Start {
+                    task_name: parsed_name,
+                    ..
+                } => {
                     assert_eq!(parsed_name, task_name);
                 }
                 _ => panic!("Expected Start command"),

@@ -31,7 +31,7 @@ mod tests {
     fn test_create_workspace_success() {
         let manager = WorkspaceManager::new();
         let result = manager.create_workspace("test-task");
-        
+
         // 現在の実装では常に成功する
         assert!(result.is_ok());
     }
@@ -39,7 +39,7 @@ mod tests {
     #[test]
     fn test_create_workspace_with_various_names() {
         let manager = WorkspaceManager::new();
-        
+
         // 様々なタスク名でテスト
         let test_cases = vec![
             "simple-task",
@@ -48,7 +48,7 @@ mod tests {
             "UPPERCASE-TASK",
             "mixed_Case-Task_123",
         ];
-        
+
         for task_name in test_cases {
             let result = manager.create_workspace(task_name);
             assert!(result.is_ok(), "Failed for task name: {}", task_name);
@@ -59,7 +59,7 @@ mod tests {
     fn test_create_workspace_empty_name() {
         let manager = WorkspaceManager::new();
         let result = manager.create_workspace("");
-        
+
         // 現在の実装では空文字でも成功する（将来的にはバリデーションが必要）
         assert!(result.is_ok());
     }
@@ -68,7 +68,7 @@ mod tests {
     fn test_list_workspaces_empty() {
         let manager = WorkspaceManager::new();
         let result = manager.list_workspaces();
-        
+
         assert!(result.is_ok());
         let workspaces = result.unwrap();
         assert!(workspaces.is_empty());
@@ -78,7 +78,7 @@ mod tests {
     fn test_list_workspaces_returns_vec() {
         let manager = WorkspaceManager::new();
         let result = manager.list_workspaces();
-        
+
         assert!(result.is_ok());
         let workspaces = result.unwrap();
         assert_eq!(workspaces.len(), 0); // 現在の実装では空のベクター
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn test_workspace_manager_multiple_operations() {
         let manager = WorkspaceManager::new();
-        
+
         // 複数の操作を連続して実行してもエラーにならないことを確認
         assert!(manager.create_workspace("task1").is_ok());
         assert!(manager.create_workspace("task2").is_ok());
