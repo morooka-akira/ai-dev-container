@@ -1,0 +1,11 @@
+version: "1.0"
+output_mode: split
+base_docs_dir: ./ai-docs/contexts
+agents:
+  claude:
+    import_files:
+      - path: "./ai-docs/contexts/03_working-rules.md"
+        note: "作業を開始するときに参照すること"
+      - path: "./ai-docs/contexts/06_rust-rule.md"
+        note: "Rustファイルの編集をするときに参照すること"
+
