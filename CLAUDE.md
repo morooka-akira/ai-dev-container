@@ -51,9 +51,6 @@ src/
 # 作業を開始するときに必ず参照すること
 @./ai-docs/rules/03_working-rules.md
 
-# 現在の実装状況と進捗を確認するときに参照
-@./ai-docs/rules/04_current-state.md
-
 # Rust言語固有の設定や慣習を確認するときに参照
 @./ai-docs/rules/05_language-specific.md
 
