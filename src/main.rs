@@ -53,16 +53,16 @@ fn main() {
                 }
             } else {
                 // 通常のTUIモード
-                println!("TUIモードを開始します...");
 
                 match run_tui() {
                     Ok(Some(selected_path)) => {
                         // Enterキーで選択されたワークスペースのパスを出力
-                        // シェル関数がこのパスを受け取ってcdを実行する
+                        // シェル関数がこのパスを受け取ってcdコマンドを実行する
                         println!("{}", selected_path);
                     }
                     Ok(None) => {
                         // 何も選択せずに終了
+                        println!("ワークスペースが選択されませんでした");
                     }
                     Err(e) => {
                         eprintln!("TUIエラー: {}", e);
@@ -135,3 +135,5 @@ fn run_tui() -> std::io::Result<Option<String>> {
 
     Ok(selected_path)
 }
+
+

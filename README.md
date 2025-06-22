@@ -56,7 +56,7 @@ Add the following to your `.bashrc` or `.zshrc`:
 # Select and navigate to workspace via TUI
 awl() {
     local target_path
-    target_path=$(gwork list)
+    target_path=$(ai-workspace list)
     if [ -n "$target_path" ]; then
         cd "$target_path"
     fi
@@ -82,7 +82,7 @@ awl  # Opens TUI to select and navigate to workspace
 **Direct execution won't navigate**:
 ```bash
 # ❌ This won't change directory
-gwork list
+ai-workspace list
 ```
 
 ## ⚙️ Configuration
@@ -151,7 +151,7 @@ Add this function to your `.bashrc` or `.zshrc` for seamless navigation:
 # Select and navigate to workspace via TUI
 awl() {
     local target_path
-    target_path=$(gwork list)
+    target_path=$(ai-workspace list)
     if [ -n "$target_path" ]; then
         cd "$target_path"
     fi
@@ -159,7 +159,7 @@ awl() {
 
 # List all workspace paths
 awl-list() {
-    gwork list --print-path-only
+    ai-workspace list --print-path-only
 }
 ```
 

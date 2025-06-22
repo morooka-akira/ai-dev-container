@@ -56,7 +56,7 @@ ai-workspace start feature-authentication
 # TUIでワークスペースを選択して移動
 awl() {
     local target_path
-    target_path=$(gwork list)
+    target_path=$(ai-workspace list)
     if [ -n "$target_path" ]; then
         cd "$target_path"
     fi
@@ -82,7 +82,7 @@ awl  # TUIでワークスペースを選択して移動
 **直接実行では移動しません**：
 ```bash
 # ❌ これではディレクトリ移動しません
-gwork list
+ai-workspace list
 ```
 
 ## ⚙️ 設定
@@ -151,7 +151,7 @@ ai-workspace list --config custom.yml
 # TUIでワークスペースを選択して移動
 awl() {
     local target_path
-    target_path=$(gwork list)
+    target_path=$(ai-workspace list)
     if [ -n "$target_path" ]; then
         cd "$target_path"
     fi
@@ -159,7 +159,7 @@ awl() {
 
 # 全ワークスペースのパス一覧を表示
 awl-list() {
-    gwork list --print-path-only
+    ai-workspace list --print-path-only
 }
 ```
 
