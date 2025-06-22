@@ -30,7 +30,11 @@ impl WorkspaceManager {
     ) -> Result<WorkspaceInfo, String> {
         let timestamp = crate::utils::generate_timestamp();
         let workspace_name = format!("{}-{}", timestamp, task_name);
-        let branch_name = format!("{}{}", branch_prefix, task_name);
+        let branch_name = if branch_prefix.is_empty() {
+            workspace_name.clone()
+        } else {
+            format!("{}{}", branch_prefix, workspace_name.clone())
+        };
         let workspace_path = format!("{}/{}", base_dir, workspace_name);
 
         println!("🚀 Creating workspace:");
@@ -135,27 +139,86 @@ impl WorkspaceManager {
 
     #[allow(dead_code)]
     pub fn remove_workspace(&self, workspace_name: &str) -> Result<(), String> {
-        // Worktreeを削除
-        if let Ok(worktree) = self.repo.find_worktree(workspace_name) {
-            // ワークスペースのパスを取得
-            if let Some(path) = worktree.path().to_str() {
-                // まずディレクトリを削除
-                if Path::new(path).exists() {
-                    std::fs::remove_dir_all(path)
-                        .map_err(|e| format!("ディレクトリ削除エラー: {}", e))?;
-                }
+        // まずワークスペースに関連するブランチ名を特定
+        let mut branch_to_delete = None;
 
-                // Worktree参照を削除（git worktree pruneに相当）
-                // git2クレートではdirectに削除するAPIがないため、ベストエフォートで削除
-                println!("🗑️ Workspace removed: {}", workspace_name);
-                println!("Note: Git worktree reference may need manual cleanup with 'git worktree prune'");
-                Ok(())
-            } else {
-                Err(format!(
-                    "ワークスペースパスが取得できません: {}",
-                    workspace_name
-                ))
+        // ワークスペース一覧からブランチ名を取得
+        if let Ok(workspaces) = self.list_workspaces() {
+            for workspace in workspaces {
+                if workspace.name == workspace_name {
+                    branch_to_delete = Some(workspace.branch.clone());
+                    break;
+                }
             }
+        }
+
+        // git worktree removeコマンドを使用してワークスペースを削除
+        let output = std::process::Command::new("git")
+            .args(["worktree", "remove", "--force", workspace_name])
+            .output()
+            .map_err(|e| format!("git worktree removeコマンド実行エラー: {}", e))?;
+
+        let worktree_removed = output.status.success();
+
+        // ワークスペースが削除された場合、ブランチも削除
+        if worktree_removed {
+            // 明示的に作成されたブランチを削除
+            if let Some(branch_name) = branch_to_delete {
+                let _ = std::process::Command::new("git")
+                    .args(["branch", "-D", &branch_name])
+                    .output();
+            }
+
+            // worktree作成時に自動生成されたブランチ（workspace_nameと同じ名前）も削除
+            let _ = std::process::Command::new("git")
+                .args(["branch", "-D", workspace_name])
+                .output();
+
+            return Ok(());
+        }
+
+        // コマンドが失敗した場合、パスで削除を試行
+        let potential_paths = vec![
+            format!("../test-workspaces/{}", workspace_name),
+            format!("../workspaces/{}", workspace_name),
+            format!("../test/{}", workspace_name),
+        ];
+
+        for path in &potential_paths {
+            let output = std::process::Command::new("git")
+                .args(["worktree", "remove", "--force", path])
+                .output()
+                .map_err(|e| format!("git worktree removeコマンド実行エラー: {}", e))?;
+
+            if output.status.success() {
+                // ワークスペースが削除された場合、ブランチも削除
+                if let Some(branch_name) = &branch_to_delete {
+                    let _ = std::process::Command::new("git")
+                        .args(["branch", "-D", branch_name])
+                        .output();
+                }
+                return Ok(());
+            }
+        }
+
+        // 最後の手段としてファイルシステムから直接削除
+        let mut found_and_removed = false;
+        for path in potential_paths {
+            if Path::new(&path).exists()
+                && std::process::Command::new("git")
+                    .args(["worktree", "remove", "--force", &path])
+                    .output()
+                    .is_err()
+            {
+                // gitコマンドが失敗した場合はディレクトリを直接削除
+                if std::fs::remove_dir_all(&path).is_ok() {
+                    found_and_removed = true;
+                }
+            }
+        }
+
+        if found_and_removed {
+            Ok(())
         } else {
             Err(format!(
                 "ワークスペースが見つかりません: {}",
@@ -181,11 +244,60 @@ mod tests {
 
     // テスト完了時にワークスペースをクリーンアップ
     fn cleanup_test_workspace(manager: &WorkspaceManager, workspace_name: &str) {
-        if let Err(e) = manager.remove_workspace(workspace_name) {
-            eprintln!(
-                "Warning: Failed to cleanup test workspace {}: {}",
-                workspace_name, e
-            );
+        // git2を使ってworktreeを削除
+        let _ = manager.remove_workspace(workspace_name);
+    }
+
+    // すべてのテスト用ワークスペースを一括削除
+    #[allow(dead_code)]
+    fn cleanup_all_test_workspaces() {
+        if let Ok(manager) = WorkspaceManager::new() {
+            if let Ok(workspaces) = manager.list_workspaces() {
+                for workspace in workspaces {
+                    // test-workspacesディレクトリ内のワークスペースを削除
+                    if workspace.path.contains("test-workspaces") {
+                        let _ = manager.remove_workspace(&workspace.name);
+                    }
+                }
+            }
+        }
+    }
+
+    // テスト用ワークスペースの自動クリーンアップ
+    struct TestWorkspaceGuard {
+        manager: WorkspaceManager,
+        workspace_names: Vec<String>,
+    }
+
+    impl TestWorkspaceGuard {
+        fn new() -> Result<Self, String> {
+            Ok(Self {
+                manager: WorkspaceManager::new()?,
+                workspace_names: Vec::new(),
+            })
+        }
+
+        fn add_workspace(&mut self, name: String) {
+            self.workspace_names.push(name);
+        }
+
+        fn create_workspace(
+            &self,
+            task_name: &str,
+            base_dir: &str,
+            branch_prefix: &str,
+        ) -> Result<WorkspaceInfo, String> {
+            self.manager
+                .create_workspace(task_name, base_dir, branch_prefix)
+        }
+    }
+
+    impl Drop for TestWorkspaceGuard {
+        fn drop(&mut self) {
+            // テスト終了時に作成されたワークスペースを確実に削除
+            for workspace_name in &self.workspace_names {
+                let _ = self.manager.remove_workspace(workspace_name);
+            }
         }
     }
 
@@ -335,17 +447,17 @@ mod tests {
     fn test_create_workspace_error_handling() {
         if let Ok(manager) = WorkspaceManager::new() {
             // 無効なパスを指定してエラーハンドリングをテスト
-            let result = manager.create_workspace("test", "/invalid/readonly/path", "test/");
+            let task_name = generate_test_workspace_name("error-handling");
+            let result = manager.create_workspace(&task_name, "/invalid/readonly/path", "test/");
             // 権限エラーなどが発生する可能性があるが、適切にエラーハンドリングされる
             match result {
-                Ok(_) => {
-                    // 成功した場合はワークスペースが作成された
-                    println!("Workspace created successfully in test environment");
+                Ok(workspace) => {
+                    // 成功した場合はワークスペースが作成された（稀なケース）
+                    cleanup_test_workspace(&manager, &workspace.name);
                 }
                 Err(e) => {
                     // エラーメッセージが適切に返される
                     assert!(!e.is_empty());
-                    println!("Expected error occurred: {}", e);
                 }
             }
         }
@@ -353,21 +465,38 @@ mod tests {
 
     #[test]
     fn test_create_workspace_branch_prefix_variations() {
-        if let Ok(manager) = WorkspaceManager::new() {
+        if let Ok(mut guard) = TestWorkspaceGuard::new() {
             let test_cases = vec![
-                ("feature/", "test-task", "feature/test-task"),
-                ("work/", "bug-fix", "work/bug-fix"),
-                ("", "no-prefix", "no-prefix"),
-                ("dev-", "experiment", "dev-experiment"),
+                ("feature/", "test-task"),
+                ("work/", "bug-fix"),
+                ("", "no-prefix"),
+                ("dev-", "experiment"),
             ];
 
-            for (prefix, task, expected_branch_start) in test_cases {
-                let result = manager.create_workspace(task, "../test-workspaces", prefix);
-                if let Ok(workspace) = result {
-                    assert!(workspace.branch.starts_with(expected_branch_start));
-                    assert!(workspace.name.contains(task));
+            for (prefix, task) in test_cases {
+                let result = guard.create_workspace(task, "../test-workspaces", prefix);
+                match result {
+                    Ok(workspace) => {
+                        // ワークスペース名とタスク名が含まれることを確認
+                        assert!(workspace.name.contains(task));
+
+                        // ブランチ名がプレフィックス + ワークスペース名になることを確認
+                        if prefix.is_empty() {
+                            assert_eq!(workspace.branch, workspace.name);
+                        } else {
+                            assert!(workspace.branch.starts_with(prefix));
+                            assert!(workspace.branch.contains(&workspace.name));
+                        }
+
+                        // 作成されたワークスペースを記録（Dropで自動削除される）
+                        guard.add_workspace(workspace.name);
+                    }
+                    Err(_) => {
+                        // テスト環境によってはエラーになる場合があるがテストは継続
+                    }
                 }
             }
+            // guard がDropされる時に自動的にワークスペースが削除される
         }
     }
 
@@ -424,28 +553,26 @@ mod tests {
 
     #[test]
     fn test_create_and_remove_workspace_integration() {
-        if let Ok(manager) = WorkspaceManager::new() {
-            let workspace_name = generate_test_workspace_name("integration");
+        if let Ok(mut guard) = TestWorkspaceGuard::new() {
+            let task_name = generate_test_workspace_name("integration");
             let base_dir = "../test-workspaces";
             let branch_prefix = "test/";
 
             // ワークスペースを作成
-            let result = manager.create_workspace(&workspace_name, base_dir, branch_prefix);
+            let result = guard.create_workspace(&task_name, base_dir, branch_prefix);
 
             match result {
                 Ok(workspace_info) => {
                     // 作成成功の場合、削除でクリーンアップ
-                    assert!(workspace_info.name.contains(&workspace_name));
+                    assert!(workspace_info.name.contains(&task_name));
                     assert!(workspace_info.path.contains(base_dir));
                     assert!(workspace_info.branch.starts_with(branch_prefix));
 
-                    // 作成されたワークスペースを削除
-                    // ワークスペース名はタイムスタンプ-タスク名の形式なのでそのまま使用
-                    cleanup_test_workspace(&manager, &workspace_info.name);
+                    // 作成されたワークスペースを記録（Dropで自動削除される）
+                    guard.add_workspace(workspace_info.name);
                 }
                 Err(_) => {
                     // エラーの場合は作成されていないのでクリーンアップ不要
-                    println!("Workspace creation failed (expected in some test environments)");
                 }
             }
         }
