@@ -420,9 +420,9 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
   - [x] ワークスペース情報の構造化ができている
 
 #### Task 3-2: workspace startコマンドの実装
-- [ ] **目的**: 実際にworktreeを作成する機能を実装
+- [x] **目的**: 実際にworktreeを作成する機能を実装
 - **詳細実装手順**:
-  1. [ ] `src/workspace.rs`の`create_workspace`関数で実際のworktree作成を実装:
+  1. [x] `src/workspace.rs`の`create_workspace`関数で実際のworktree作成を実装:
      ```rust
      pub fn create_workspace(&self, task_name: &str, base_dir: &str, branch_prefix: &str) -> Result<WorkspaceInfo, String> {
          let timestamp = crate::utils::generate_timestamp();
@@ -474,7 +474,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          })
      }
      ```
-  2. [ ] 実際のworktree一覧取得機能を実装:
+  2. [x] 実際のworktree一覧取得機能を実装:
      ```rust
      pub fn list_workspaces(&self) -> Result<Vec<WorkspaceInfo>, String> {
          let worktrees = self.repo.worktrees()
@@ -505,17 +505,17 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          Ok(workspace_list)
      }
      ```
-  3. [ ] エラーハンドリングの改善とuser-friendlyなメッセージ
-  4. [ ] テスト実行:
+  3. [x] エラーハンドリングの改善とuser-friendlyなメッセージ
+  4. [x] テスト実行:
      - `cargo run -- start test-real`で実際のworktree作成確認
      - `cargo run -- list`で作成されたworktreeが表示される確認
      - 作成されたディレクトリに実際に移動してGit状態確認
-  5. [ ] 作成されたワークスペースの手動削除: `git worktree remove <path>`
+  5. [x] 作成されたワークスペースの手動削除: `git worktree remove <path>`
 - **完了条件**: 
-  - [ ] `ai-workspace start test-task`で実際にworktreeが作成される
-  - [ ] 作成されたワークスペースが正しいブランチを持つ
-  - [ ] `ai-workspace list`で作成されたワークスペースが表示される
-  - [ ] 適切なパスとブランチ名が使用される
+  - [x] `ai-workspace start test-task`で実際にworktreeが作成される
+  - [x] 作成されたワークスペースが正しいブランチを持つ
+  - [x] `ai-workspace list`で作成されたワークスペースが表示される
+  - [x] 適切なパスとブランチ名が使用される
 
 ### Phase 4: 基本TUI機能の実装
 
@@ -1018,8 +1018,8 @@ worktreeの作成が可能な状態
 ## 全タスク一覧（チェックリスト）
 
 ### Phase 1: 基本CLI構造の構築
-- [ ] Task 1-1: 基本CLIフレームワークの実装
-- [ ] Task 1-2: プロジェクト構造の整備
+- [x] Task 1-1: 基本CLIフレームワークの実装
+- [x] Task 1-2: プロジェクト構造の整備
 
 ### Phase 2: 設定ファイル機能の実装  
 - [x] Task 2-1: 設定ファイル構造体の定義
@@ -1027,7 +1027,7 @@ worktreeの作成が可能な状態
 
 ### Phase 3: Git Worktree機能の実装
 - [x] Task 3-1: Git操作の基本実装
-- [ ] Task 3-2: workspace startコマンドの実装
+- [x] Task 3-2: workspace startコマンドの実装
 
 ### Phase 4: 基本TUI機能の実装
 - [ ] Task 4-1: TUI基本構造の実装
