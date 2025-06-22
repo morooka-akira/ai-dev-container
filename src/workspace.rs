@@ -168,8 +168,6 @@ impl WorkspaceManager {
             match output {
                 Ok(result) => {
                     if result.status.success() {
-                        println!("  ✅ コマンド実行成功: {}", command);
-
                         // 標準出力がある場合は表示
                         if !result.stdout.is_empty() {
                             let stdout = String::from_utf8_lossy(&result.stdout);
