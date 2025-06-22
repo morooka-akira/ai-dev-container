@@ -310,10 +310,10 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
 ### Phase 3: Git Worktree機能の実装
 
 #### Task 3-1: Git操作の基本実装
-- [ ] **目的**: Git worktreeの基本操作を実装
+- [x] **目的**: Git worktreeの基本操作を実装
 - **詳細実装手順**:
-  1. [ ] `Cargo.toml`に`git2 = "0.18"`を追加
-  2. [ ] `src/workspace.rs`を以下に更新:
+  1. [x] `Cargo.toml`に`git2 = "0.18"`を追加
+  2. [x] `src/workspace.rs`を以下に更新:
      ```rust
      use git2::{Repository, WorktreeAddOptions};
      use std::path::Path;
@@ -376,7 +376,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          }
      }
      ```
-  3. [ ] `src/main.rs`でWorkspaceManagerの初期化をエラーハンドリング付きに更新:
+  3. [x] `src/main.rs`でWorkspaceManagerの初期化をエラーハンドリング付きに更新:
      ```rust
      fn main() {
          let cli = Cli::parse();
@@ -411,13 +411,13 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          }
      }
      ```
-  4. [ ] `cargo check`でコンパイル確認
-  5. [ ] Gitリポジトリ内で`cargo run -- start test-basic`をテスト実行
-  6. [ ] 非Gitディレクトリでのエラーハンドリング確認
+  4. [x] `cargo check`でコンパイル確認
+  5. [x] Gitリポジトリ内で`cargo run -- start test-basic`をテスト実行
+  6. [x] 非Gitディレクトリでのエラーハンドリング確認
 - **完了条件**: 
-  - [ ] Gitリポジトリ内で正常に動作する
-  - [ ] 非Gitディレクトリで適切なエラーメッセージが表示される
-  - [ ] ワークスペース情報の構造化ができている
+  - [x] Gitリポジトリ内で正常に動作する
+  - [x] 非Gitディレクトリで適切なエラーメッセージが表示される
+  - [x] ワークスペース情報の構造化ができている
 
 #### Task 3-2: workspace startコマンドの実装
 - [ ] **目的**: 実際にworktreeを作成する機能を実装
@@ -1026,7 +1026,7 @@ worktreeの作成が可能な状態
 - [x] Task 2-2: 設定ファイル読み込み機能
 
 ### Phase 3: Git Worktree機能の実装
-- [ ] Task 3-1: Git操作の基本実装
+- [x] Task 3-1: Git操作の基本実装
 - [ ] Task 3-2: workspace startコマンドの実装
 
 ### Phase 4: 基本TUI機能の実装
