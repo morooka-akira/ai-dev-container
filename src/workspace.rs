@@ -1,6 +1,7 @@
 use git2::{Repository, WorktreeAddOptions};
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 
 pub struct WorkspaceManager {
     #[allow(dead_code)]
@@ -29,7 +30,7 @@ impl WorkspaceManager {
         base_dir: &str,
         branch_prefix: &str,
     ) -> Result<WorkspaceInfo, String> {
-        self.create_workspace_with_config(task_name, base_dir, branch_prefix, &[])
+        self.create_workspace_with_config(task_name, base_dir, branch_prefix, &[], &[])
     }
 
     pub fn create_workspace_with_config(
@@ -38,6 +39,7 @@ impl WorkspaceManager {
         base_dir: &str,
         branch_prefix: &str,
         copy_files: &[String],
+        pre_commands: &[String],
     ) -> Result<WorkspaceInfo, String> {
         let timestamp = crate::utils::generate_timestamp();
         let workspace_name = format!("{}-{}", timestamp, task_name);
@@ -90,6 +92,12 @@ impl WorkspaceManager {
             self.copy_files(Path::new("."), Path::new(&workspace_path), copy_files);
         }
 
+        // 事前コマンド実行処理
+        if !pre_commands.is_empty() {
+            println!("\n⚡ Executing pre-commands...");
+            self.execute_pre_commands(Path::new(&workspace_path), pre_commands);
+        }
+
         println!("✅ Workspace created successfully!");
         println!("📁 Path: {}", workspace_path);
         println!("🌿 Branch: {}", branch_name);
@@ -131,6 +139,58 @@ impl WorkspaceManager {
                 }
                 Err(e) => {
                     println!("  ❌ コピーエラー: {} - {}", file_path, e);
+                }
+            }
+        }
+    }
+
+    fn execute_pre_commands(&self, workspace_path: &Path, pre_commands: &[String]) {
+        for (i, command) in pre_commands.iter().enumerate() {
+            println!(
+                "  [{}/{}] Executing: {}",
+                i + 1,
+                pre_commands.len(),
+                command
+            );
+
+            let output = if cfg!(target_os = "windows") {
+                Command::new("cmd")
+                    .args(["/C", command])
+                    .current_dir(workspace_path)
+                    .output()
+            } else {
+                Command::new("sh")
+                    .args(["-c", command])
+                    .current_dir(workspace_path)
+                    .output()
+            };
+
+            match output {
+                Ok(result) => {
+                    if result.status.success() {
+                        println!("  ✅ コマンド実行成功: {}", command);
+
+                        // 標準出力がある場合は表示
+                        if !result.stdout.is_empty() {
+                            let stdout = String::from_utf8_lossy(&result.stdout);
+                            println!("     出力: {}", stdout.trim());
+                        }
+                    } else {
+                        println!(
+                            "  ❌ コマンド実行失敗: {} (終了コード: {:?})",
+                            command,
+                            result.status.code()
+                        );
+
+                        // エラー出力がある場合は表示
+                        if !result.stderr.is_empty() {
+                            let stderr = String::from_utf8_lossy(&result.stderr);
+                            println!("     エラー: {}", stderr.trim());
+                        }
+                    }
+                }
+                Err(e) => {
+                    println!("  ❌ コマンド実行エラー: {} - {}", command, e);
                 }
             }
         }
@@ -716,6 +776,96 @@ mod tests {
 
             // エラーが発生しないことを確認（パニックしない）
             assert!(dest_dir.exists());
+        }
+    }
+
+    #[test]
+    fn test_execute_pre_commands_function() {
+        if let Ok(manager) = WorkspaceManager::new() {
+            // 一時ディレクトリを作成
+            let temp_dir = TempDir::new().unwrap();
+            let workspace_dir = temp_dir.path().join("workspace");
+            fs::create_dir_all(&workspace_dir).unwrap();
+
+            // テスト用のコマンドリスト
+            let pre_commands = vec![
+                "echo 'Hello World' > test_output.txt".to_string(),
+                "ls -la".to_string(),
+                "echo 'Command completed'".to_string(),
+            ];
+
+            // コマンドを実行
+            manager.execute_pre_commands(&workspace_dir, &pre_commands);
+
+            // 実行結果の確認
+            let output_file = workspace_dir.join("test_output.txt");
+            assert!(output_file.exists());
+
+            let content = fs::read_to_string(output_file).unwrap();
+            assert_eq!(content.trim(), "Hello World");
+        }
+    }
+
+    #[test]
+    fn test_execute_pre_commands_with_failure() {
+        if let Ok(manager) = WorkspaceManager::new() {
+            let temp_dir = TempDir::new().unwrap();
+            let workspace_dir = temp_dir.path().join("workspace");
+            fs::create_dir_all(&workspace_dir).unwrap();
+
+            // 成功するコマンドと失敗するコマンドを混在
+            let pre_commands = vec![
+                "echo 'Success 1' > success1.txt".to_string(),
+                "false".to_string(), // 必ず失敗するコマンド
+                "echo 'Success 2' > success2.txt".to_string(),
+            ];
+
+            // コマンドを実行（失敗しても処理が継続することを確認）
+            manager.execute_pre_commands(&workspace_dir, &pre_commands);
+
+            // 成功したコマンドの結果は残っている
+            assert!(workspace_dir.join("success1.txt").exists());
+            assert!(workspace_dir.join("success2.txt").exists());
+        }
+    }
+
+    #[test]
+    fn test_execute_pre_commands_empty_list() {
+        if let Ok(manager) = WorkspaceManager::new() {
+            let temp_dir = TempDir::new().unwrap();
+            let workspace_dir = temp_dir.path().join("workspace");
+            fs::create_dir_all(&workspace_dir).unwrap();
+
+            // 空のコマンドリストで実行
+            let pre_commands: Vec<String> = vec![];
+            manager.execute_pre_commands(&workspace_dir, &pre_commands);
+
+            // エラーが発生しないことを確認（パニックしない）
+            assert!(workspace_dir.exists());
+        }
+    }
+
+    #[test]
+    fn test_execute_pre_commands_working_directory() {
+        if let Ok(manager) = WorkspaceManager::new() {
+            let temp_dir = TempDir::new().unwrap();
+            let workspace_dir = temp_dir.path().join("workspace");
+            fs::create_dir_all(&workspace_dir).unwrap();
+
+            // カレントディレクトリを確認するコマンド
+            let pre_commands = vec!["pwd > current_dir.txt".to_string()];
+
+            manager.execute_pre_commands(&workspace_dir, &pre_commands);
+
+            // 作業ディレクトリが正しく設定されていることを確認
+            let output_file = workspace_dir.join("current_dir.txt");
+            assert!(output_file.exists());
+
+            let content = fs::read_to_string(output_file).unwrap();
+            let current_dir = content.trim();
+
+            // ワークスペースディレクトリがカレントディレクトリとして設定されている
+            assert!(current_dir.ends_with("workspace"));
         }
     }
 }

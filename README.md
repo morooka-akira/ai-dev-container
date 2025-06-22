@@ -175,8 +175,8 @@ src/
 - [x] Git worktree integration
 - [x] Configuration file support
 - [x] File copying functionality
+- [x] Pre-command execution
 - [x] Interactive TUI (basic)
-- [ ] Pre-command execution
 - [ ] Advanced TUI features (deletion, details)
 - [ ] Shell integration helpers
 - [ ] Workspace templates

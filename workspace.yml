@@ -1,0 +1,8 @@
+workspace:
+  base_dir: "../test-workspaces"
+  branch_prefix: "test/"
+  copy_files:
+    - ".env"
+    - ".env.local"
+  pre_commands:
+    - "echo 'setup complete'"
