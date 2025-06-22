@@ -520,14 +520,14 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
 ### Phase 4: 基本TUI機能の実装
 
 #### Task 4-1: TUI基本構造の実装
-- [ ] **目的**: Ratatuiベースの基本TUI画面を作成
+- [x] **目的**: Ratatuiベースの基本TUI画面を作成
 - **詳細実装手順**:
-  1. [ ] `Cargo.toml`に以下を追加:
+  1. [x] `Cargo.toml`に以下を追加:
      ```toml
      ratatui = "0.24"
      crossterm = "0.27"
      ```
-  2. [ ] `src/tui/mod.rs`を作成:
+  2. [x] `src/tui/mod.rs`を作成:
      ```rust
      pub mod app;
      pub mod ui;
@@ -535,7 +535,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
      
      pub use app::App;
      ```
-  3. [ ] `src/tui/app.rs`を作成（基本的なアプリケーション状態管理）:
+  3. [x] `src/tui/app.rs`を作成（基本的なアプリケーション状態管理）:
      ```rust
      use crate::workspace::WorkspaceInfo;
      
@@ -589,7 +589,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          }
      }
      ```
-  4. [ ] `src/tui/ui.rs`を作成（UI描画ロジック）:
+  4. [x] `src/tui/ui.rs`を作成（UI描画ロジック）:
      ```rust
      use ratatui::{
          backend::Backend,
@@ -675,7 +675,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          f.render_stateful_widget(list, content_layout[1], &mut list_state);
      }
      ```
-  5. [ ] `src/tui/events.rs`を作成（キーイベント処理）:
+  5. [x] `src/tui/events.rs`を作成（キーイベント処理）:
      ```rust
      use crossterm::event::{self, Event, KeyCode};
      use std::time::Duration;
@@ -695,7 +695,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          Ok(())
      }
      ```
-  6. [ ] `src/main.rs`にTUIモジュールを追加し、listコマンドでTUIを起動:
+  6. [x] `src/main.rs`にTUIモジュールを追加し、listコマンドでTUIを起動:
      ```rust
      mod tui;
      
@@ -751,19 +751,19 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          Ok(())
      }
      ```
-  7. [ ] `cargo check`でコンパイル確認
-  8. [ ] `cargo run -- list`でTUI画面表示確認
-  9. [ ] 上下キーとqキーでの操作確認
+  7. [x] `cargo check`でコンパイル確認
+  8. [x] `cargo run -- list`でTUI画面表示確認
+  9. [x] 上下キーとqキーでの操作確認
 - **完了条件**: 
-  - [ ] TUI画面が正常に表示される
-  - [ ] 上下キーで選択移動ができる
-  - [ ] qキーで終了できる
-  - [ ] 固定データが適切に表示される
+  - [x] TUI画面が正常に表示される
+  - [x] 上下キーで選択移動ができる
+  - [x] qキーで終了できる
+  - [x] 固定データが適切に表示される
 
 #### Task 4-2: ワークスペース一覧表示機能
-- [ ] **目的**: 実際のworktreeデータをTUIに表示
+- [x] **目的**: 実際のworktreeデータをTUIに表示
 - **詳細実装手順**:
-  1. [ ] `src/tui/app.rs`を実データ対応に更新:
+  1. [x] `src/tui/app.rs`を実データ対応に更新:
      ```rust
      use crate::workspace::{WorkspaceInfo, WorkspaceManager};
      
@@ -791,7 +791,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          }
      }
      ```
-  2. [ ] `src/tui/ui.rs`のリスト表示を改善:
+  2. [x] `src/tui/ui.rs`のリスト表示を改善:
      ```rust
      // Workspace list
      if app.workspaces.is_empty() {
@@ -838,7 +838,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          f.render_stateful_widget(list, content_layout[1], &mut list_state);
      }
      ```
-  3. [ ] `src/main.rs`のrun_tui関数を実データ対応に更新:
+  3. [x] `src/main.rs`のrun_tui関数を実データ対応に更新:
      ```rust
      fn run_tui() -> std::io::Result<()> {
          // ... Terminal setup code ...
@@ -882,7 +882,7 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          Ok(())
      }
      ```
-  4. [ ] リフレッシュ機能（'r'キー）を追加:
+  4. [x] リフレッシュ機能（'r'キー）を追加:
      ```rust
      // src/tui/events.rs
      KeyCode::Char('r') => {
@@ -890,15 +890,15 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
          // 実装は次のタスクで詳細化
      },
      ```
-  5. [ ] テスト実行:
+  5. [x] テスト実行:
      - 事前に`cargo run -- start test-data`でワークスペース作成
      - `cargo run -- list`で作成されたワークスペースがTUIに表示される確認
      - 空の状態でのメッセージ表示確認
 - **完了条件**: 
-  - [ ] 実際のworktreeデータがTUI画面に表示される
-  - [ ] 選択状態が視覚的に確認できる
-  - [ ] ワークスペースが0件の場合の適切なメッセージ表示
-  - [ ] 複数のワークスペースでの選択移動が正常に動作する
+  - [x] 実際のworktreeデータがTUI画面に表示される
+  - [x] 選択状態が視覚的に確認できる
+  - [x] ワークスペースが0件の場合の適切なメッセージ表示
+  - [x] 複数のワークスペースでの選択移動が正常に動作する
 
 ### Phase 5: ファイル操作機能の実装
 
