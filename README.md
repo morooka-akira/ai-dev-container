@@ -120,12 +120,18 @@ ai-workspace list --config custom.yml
 Add this function to your `.bashrc` or `.zshrc` for seamless navigation:
 
 ```bash
+# Select and navigate to workspace via TUI
 awl() {
     local target_path
-    target_path=$(ai-workspace list --print-path-only)
+    target_path=$(gwork list)
     if [ -n "$target_path" ]; then
         cd "$target_path"
     fi
+}
+
+# List all workspace paths
+awl-list() {
+    gwork list --print-path-only
 }
 ```
 

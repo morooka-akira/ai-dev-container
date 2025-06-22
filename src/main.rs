@@ -43,11 +43,11 @@ fn main() {
             let _config = load_config_from_path(&config);
 
             if print_path_only {
-                // --print-path-onlyモード: 最初のワークスペースのパスを出力
+                // --print-path-onlyモード: 全ワークスペースのパス一覧を出力
                 if let Ok(workspace_manager) = WorkspaceManager::new() {
                     if let Ok(workspaces) = workspace_manager.list_workspaces() {
-                        if let Some(first_workspace) = workspaces.first() {
-                            println!("{}", first_workspace.path);
+                        for workspace in workspaces {
+                            println!("{}", workspace.path);
                         }
                     }
                 }
@@ -57,7 +57,8 @@ fn main() {
 
                 match run_tui() {
                     Ok(Some(selected_path)) => {
-                        // Enterキーで選択されたパスを出力
+                        // Enterキーで選択されたワークスペースのパスを出力
+                        // シェル関数がこのパスを受け取ってcdを実行する
                         println!("{}", selected_path);
                     }
                     Ok(None) => {

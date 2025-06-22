@@ -120,12 +120,18 @@ ai-workspace list --config custom.yml
 シームレスなナビゲーションのために、`.bashrc` または `.zshrc` にこの関数を追加：
 
 ```bash
+# TUIでワークスペースを選択して移動
 awl() {
     local target_path
-    target_path=$(ai-workspace list --print-path-only)
+    target_path=$(gwork list)
     if [ -n "$target_path" ]; then
         cd "$target_path"
     fi
+}
+
+# 全ワークスペースのパス一覧を表示
+awl-list() {
+    gwork list --print-path-only
 }
 ```
 
