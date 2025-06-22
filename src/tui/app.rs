@@ -67,11 +67,11 @@ mod tests {
     #[test]
     fn test_app_navigation_empty() {
         let mut app = App::new();
-        
+
         // 空の状態では何も変化しない
         app.next();
         assert_eq!(app.selected_index, 0);
-        
+
         app.previous();
         assert_eq!(app.selected_index, 0);
     }
@@ -95,15 +95,15 @@ mod tests {
         // 下移動
         app.next();
         assert_eq!(app.selected_index, 1);
-        
+
         // 最後から次は最初へ
         app.next();
         assert_eq!(app.selected_index, 0);
-        
+
         // 上移動
         app.previous();
         assert_eq!(app.selected_index, 1);
-        
+
         // 最初から前は最後へ
         app.previous();
         assert_eq!(app.selected_index, 0);
@@ -113,7 +113,7 @@ mod tests {
     fn test_app_quit() {
         let mut app = App::new();
         assert!(!app.should_quit);
-        
+
         app.quit();
         assert!(app.should_quit);
     }
@@ -121,13 +121,11 @@ mod tests {
     #[test]
     fn test_get_selected_workspace() {
         let mut app = App::new();
-        app.workspaces = vec![
-            WorkspaceInfo {
-                name: "workspace1".to_string(),
-                path: "/path1".to_string(),
-                branch: "branch1".to_string(),
-            },
-        ];
+        app.workspaces = vec![WorkspaceInfo {
+            name: "workspace1".to_string(),
+            path: "/path1".to_string(),
+            branch: "branch1".to_string(),
+        }];
 
         let selected = app.get_selected_workspace();
         assert!(selected.is_some());

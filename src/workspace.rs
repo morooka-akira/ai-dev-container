@@ -129,7 +129,6 @@ impl WorkspaceManager {
         // メインワークツリーは除外（一般的に「main」ブランチの作業ディレクトリ）
         workspace_list.retain(|ws| ws.name != "main" && !ws.path.ends_with("/.git"));
 
-
         Ok(workspace_list)
     }
 
