@@ -191,7 +191,7 @@ mod tests {
                 branch: "branch2".to_string(),
             },
         ];
-        
+
         // 最初のワークスペースを削除
         app.remove_workspace("workspace1");
         assert_eq!(app.workspaces.len(), 1);
@@ -219,7 +219,7 @@ mod tests {
                 branch: "branch2".to_string(),
             },
         ];
-        
+
         // 2番目を選択してから1番目を削除
         app.selected_index = 1;
         app.remove_workspace("workspace1");

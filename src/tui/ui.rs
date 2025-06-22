@@ -112,7 +112,7 @@ fn draw_delete_confirmation_dialog(f: &mut Frame, workspace_name: &str, workspac
     let area = f.area();
     let popup_width = 60.min(area.width);
     let popup_height = 8.min(area.height);
-    
+
     let popup_area = ratatui::layout::Rect {
         x: (area.width.saturating_sub(popup_width)) / 2,
         y: (area.height.saturating_sub(popup_height)) / 2,
@@ -155,12 +155,15 @@ fn draw_delete_confirmation_dialog(f: &mut Frame, workspace_name: &str, workspac
     f.render_widget(workspace_info, dialog_layout[1]);
 
     // 確認メッセージ
-    let warning = Paragraph::new("この操作は取り消せません。")
-        .style(Style::default().fg(Color::Yellow));
+    let warning =
+        Paragraph::new("この操作は取り消せません。").style(Style::default().fg(Color::Yellow));
     f.render_widget(warning, dialog_layout[2]);
 
     // 操作ガイド
-    let guide = Paragraph::new("[Y]es  [N]o")
-        .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD));
+    let guide = Paragraph::new("[Y]es  [N]o").style(
+        Style::default()
+            .fg(Color::Cyan)
+            .add_modifier(Modifier::BOLD),
+    );
     f.render_widget(guide, dialog_layout[3]);
 }

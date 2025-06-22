@@ -206,7 +206,7 @@ mod tests {
     #[test]
     fn test_delete_workspace_action() {
         let app = create_test_app_with_workspaces();
-        
+
         // 選択されたワークスペースが削除アクションで返される
         if let Some(workspace) = app.get_selected_workspace() {
             let expected_action = AppAction::DeleteWorkspace(workspace.name.clone());
