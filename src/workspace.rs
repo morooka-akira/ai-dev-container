@@ -814,7 +814,13 @@ mod tests {
         if let Ok(manager) = WorkspaceManager::new() {
             // 無効なパスを指定してエラーハンドリングをテスト
             let task_name = generate_test_workspace_name("error-handling");
-            let result = manager.create_workspace_with_config(&task_name, "/invalid/readonly/path", "test/", &[], &[]);
+            let result = manager.create_workspace_with_config(
+                &task_name,
+                "/invalid/readonly/path",
+                "test/",
+                &[],
+                &[],
+            );
             // 権限エラーなどが発生する可能性があるが、適切にエラーハンドリングされる
             match result {
                 Ok(workspace) => {
@@ -1148,7 +1154,6 @@ mod tests {
             assert!(result.is_ok());
 
             let details = result.unwrap();
-            // name, path, branchフィールドは削除されたので、代わりに他のフィールドをテスト
 
             // 日時情報が取得されていることを確認
             assert!(!details.created.is_empty());
@@ -1181,7 +1186,6 @@ mod tests {
             assert!(result.is_ok());
 
             let details = result.unwrap();
-            // name, path, branchフィールドは削除されたので、直接テストしない
 
             // 存在しないパスの場合のエラーメッセージが設定されていることを確認
             assert!(
