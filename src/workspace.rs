@@ -500,10 +500,7 @@ impl WorkspaceManager {
                                             format!("{}日前", diff / 86400)
                                         };
 
-                                        commits.push(format!(
-                                            "- {} ({})",
-                                            short_message, time_ago
-                                        ));
+                                        commits.push(format!("- {} ({})", short_message, time_ago));
                                     }
                                 }
                             }
