@@ -25,7 +25,6 @@ pub enum GworkError {
 
     /// 一般的なエラー
     #[error("エラー: {message}")]
-    #[allow(dead_code)]
     General { message: String },
 }
 

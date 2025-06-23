@@ -6,13 +6,11 @@ use std::process::Command;
 use tracing::{debug, error, warn};
 
 pub struct WorkspaceManager {
-    #[allow(dead_code)]
     repo: Repository,
 }
 
 #[derive(Debug)]
 pub struct WorkspaceInfo {
-    #[allow(dead_code)]
     pub name: String,
     pub path: String,
     pub branch: String,
@@ -20,12 +18,6 @@ pub struct WorkspaceInfo {
 
 #[derive(Debug)]
 pub struct WorkspaceDetails {
-    #[allow(dead_code)]
-    pub name: String,
-    #[allow(dead_code)]
-    pub path: String,
-    #[allow(dead_code)]
-    pub branch: String,
     pub created: String,
     pub last_modified: String,
     pub status: String,
@@ -43,16 +35,6 @@ impl WorkspaceManager {
         })?;
         debug!("Gitリポジトリを正常にオープンしました");
         Ok(Self { repo })
-    }
-
-    #[allow(dead_code)]
-    pub fn create_workspace(
-        &self,
-        task_name: &str,
-        base_dir: &str,
-        branch_prefix: &str,
-    ) -> GworkResult<WorkspaceInfo> {
-        self.create_workspace_with_config(task_name, base_dir, branch_prefix, &[], &[])
     }
 
     pub fn create_workspace_with_config(
@@ -155,9 +137,6 @@ impl WorkspaceManager {
             self.execute_pre_commands(Path::new(&workspace_path), pre_commands);
         }
 
-        println!("✅ Workspace created successfully!");
-        println!("📁 Path: {}", workspace_path);
-        println!("🌿 Branch: {}", branch_name);
         println!("\nTo enter the workspace:");
         println!("  cd {}", workspace_path);
 
@@ -582,9 +561,6 @@ impl WorkspaceManager {
         };
 
         Ok(WorkspaceDetails {
-            name: workspace_info.name.clone(),
-            path: workspace_info.path.clone(),
-            branch: workspace_info.branch.clone(),
             created,
             last_modified,
             status,
@@ -678,7 +654,7 @@ mod tests {
             branch_prefix: &str,
         ) -> GworkResult<WorkspaceInfo> {
             self.manager
-                .create_workspace(task_name, base_dir, branch_prefix)
+                .create_workspace_with_config(task_name, base_dir, branch_prefix, &[], &[])
         }
     }
 
@@ -838,7 +814,13 @@ mod tests {
         if let Ok(manager) = WorkspaceManager::new() {
             // 無効なパスを指定してエラーハンドリングをテスト
             let task_name = generate_test_workspace_name("error-handling");
-            let result = manager.create_workspace(&task_name, "/invalid/readonly/path", "test/");
+            let result = manager.create_workspace_with_config(
+                &task_name,
+                "/invalid/readonly/path",
+                "test/",
+                &[],
+                &[],
+            );
             // 権限エラーなどが発生する可能性があるが、適切にエラーハンドリングされる
             match result {
                 Ok(workspace) => {
@@ -1172,9 +1154,6 @@ mod tests {
             assert!(result.is_ok());
 
             let details = result.unwrap();
-            assert_eq!(details.name, "test-workspace");
-            assert_eq!(details.path, ".");
-            assert_eq!(details.branch, "test/branch");
 
             // 日時情報が取得されていることを確認
             assert!(!details.created.is_empty());
@@ -1207,9 +1186,6 @@ mod tests {
             assert!(result.is_ok());
 
             let details = result.unwrap();
-            assert_eq!(details.name, "nonexistent-workspace");
-            assert_eq!(details.path, "/path/that/does/not/exist");
-            assert_eq!(details.branch, "test/branch");
 
             // 存在しないパスの場合のエラーメッセージが設定されていることを確認
             assert!(
