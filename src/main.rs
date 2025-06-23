@@ -9,7 +9,7 @@ use clap::Parser;
 use cli::{Cli, Commands};
 use config::load_config_from_path;
 use error::GworkError;
-use tracing::{debug, error, info};
+use tracing::{debug, error};
 use workspace::WorkspaceManager;
 
 fn main() {
@@ -22,12 +22,12 @@ fn main() {
     });
     init_logging(is_tui_mode);
 
-    info!("gwork アプリケーションを開始します");
+    debug!("gwork アプリケーションを開始します");
     debug!("コマンドライン引数を解析しました");
 
     let workspace_manager = match WorkspaceManager::new() {
         Ok(manager) => {
-            info!("WorkspaceManagerを正常に初期化しました");
+            debug!("WorkspaceManagerを正常に初期化しました");
             manager
         }
         Err(e) => {
@@ -39,7 +39,7 @@ fn main() {
 
     let result = match cli.command {
         Commands::Start { task_name, config } => {
-            info!("ワークスペース作成を開始します: {}", task_name);
+            debug!("ワークスペース作成を開始します: {}", task_name);
             debug!("使用する設定ファイル: {}", config);
 
             let config = load_config_from_path(&config);
@@ -53,7 +53,7 @@ fn main() {
                 &config.workspace.pre_commands,
             ) {
                 Ok(info) => {
-                    info!("ワークスペース作成が完了しました: {}", info.name);
+                    debug!("ワークスペース作成が完了しました: {}", info.name);
                     println!("✅ ワークスペース準備完了: {:?}", info);
                     Ok(())
                 }
@@ -68,7 +68,7 @@ fn main() {
             config,
             print_path_only,
         } => {
-            info!("ワークスペース一覧表示を開始します");
+            debug!("ワークスペース一覧表示を開始します");
             debug!("使用する設定ファイル: {}", config);
 
             let _config = load_config_from_path(&config);
@@ -78,7 +78,7 @@ fn main() {
                 // --print-path-onlyモード: 全ワークスペースのパス一覧を出力
                 match workspace_manager.list_workspaces() {
                     Ok(workspaces) => {
-                        info!("ワークスペース一覧を取得しました: {} 件", workspaces.len());
+                        debug!("ワークスペース一覧を取得しました: {} 件", workspaces.len());
                         for workspace in workspaces {
                             println!("{}", workspace.path);
                         }
@@ -96,7 +96,7 @@ fn main() {
 
                 match run_tui() {
                     Ok(Some(selected_path)) => {
-                        info!("TUIで選択されたパス: {}", selected_path);
+                        debug!("TUIで選択されたパス: {}", selected_path);
                         // Enterキーで選択されたワークスペースのパスを出力
                         // シェル関数がこのパスを受け取ってcdを実行する
                         println!("{}", selected_path);
@@ -124,7 +124,7 @@ fn main() {
         std::process::exit(1);
     }
 
-    info!("gwork アプリケーションを正常終了します");
+    debug!("gwork アプリケーションを正常終了します");
 }
 
 /// ログの初期化

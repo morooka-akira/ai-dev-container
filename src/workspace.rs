@@ -3,7 +3,7 @@ use git2::{Repository, WorktreeAddOptions};
 use std::fs;
 use std::path::Path;
 use std::process::Command;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, warn};
 
 pub struct WorkspaceManager {
     #[allow(dead_code)]
@@ -41,7 +41,7 @@ impl WorkspaceManager {
             error!("Gitリポジトリのオープンに失敗しました: {}", e);
             GworkError::git(format!("Gitリポジトリが見つかりません: {}", e))
         })?;
-        info!("Gitリポジトリを正常にオープンしました");
+        debug!("Gitリポジトリを正常にオープンしました");
         Ok(Self { repo })
     }
 
@@ -72,7 +72,7 @@ impl WorkspaceManager {
         };
         let workspace_path = format!("{}/{}", base_dir, workspace_name);
 
-        info!("ワークスペースを作成します: {}", workspace_name);
+        debug!("ワークスペースを作成します: {}", workspace_name);
         debug!("ワークスペースパス: {}", workspace_path);
         debug!("ブランチ名: {}", branch_name);
 
@@ -300,7 +300,7 @@ impl WorkspaceManager {
 
     #[allow(dead_code)]
     pub fn remove_workspace(&self, workspace_name: &str) -> GworkResult<()> {
-        info!("ワークスペースを削除します: {}", workspace_name);
+        debug!("ワークスペースを削除します: {}", workspace_name);
         // まずワークスペースに関連するブランチ名を特定
         let mut branch_to_delete = None;
 
@@ -330,7 +330,7 @@ impl WorkspaceManager {
 
         // ワークスペースが削除された場合、ブランチも削除
         if worktree_removed {
-            info!("ワークスペースが正常に削除されました");
+            debug!("ワークスペースが正常に削除されました");
             // 明示的に作成されたブランチを削除
             if let Some(branch_name) = branch_to_delete {
                 debug!("関連ブランチを削除します: {}", branch_name);
@@ -367,7 +367,7 @@ impl WorkspaceManager {
                 })?;
 
             if output.status.success() {
-                info!("パスによる削除が成功しました: {}", path);
+                debug!("パスによる削除が成功しました: {}", path);
                 // ワークスペースが削除された場合、ブランチも削除
                 if let Some(branch_name) = &branch_to_delete {
                     debug!("関連ブランチを削除します: {}", branch_name);

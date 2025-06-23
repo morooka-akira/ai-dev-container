@@ -2,7 +2,7 @@ use crate::error::{GworkError, GworkResult};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, warn};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WorkspaceConfig {
@@ -54,7 +54,7 @@ pub fn load_config_from_path_safe(path: &str) -> GworkResult<WorkspaceConfig> {
             GworkError::config(format!("YAML解析エラー: {}", e))
         })?;
 
-        info!("設定ファイルを正常に読み込みました: {}", path);
+        debug!("設定ファイルを正常に読み込みました: {}", path);
         Ok(config)
     } else {
         debug!("設定ファイルが存在しません: {}", path);
@@ -78,7 +78,7 @@ pub fn load_config_from_path(path: &str) -> WorkspaceConfig {
                 );
                 match serde_yaml::from_str::<WorkspaceConfig>(&content) {
                     Ok(config) => {
-                        info!("設定ファイルを正常に読み込みました: {}", path);
+                        debug!("設定ファイルを正常に読み込みました: {}", path);
                         config
                     }
                     Err(e) => {
@@ -96,7 +96,7 @@ pub fn load_config_from_path(path: &str) -> WorkspaceConfig {
         }
     } else {
         debug!("設定ファイルが存在しません: {}", path);
-        info!("デフォルト設定を使用します");
+        debug!("デフォルト設定を使用します");
         WorkspaceConfig::default()
     }
 }
