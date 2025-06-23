@@ -155,6 +155,8 @@ impl WorkspaceManager {
             self.execute_pre_commands(Path::new(&workspace_path), pre_commands);
         }
 
+        println!("\nTo enter the workspace:");
+        println!("  cd {}", workspace_path);
 
         Ok(WorkspaceInfo {
             name: workspace_name,
