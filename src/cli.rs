@@ -20,7 +20,7 @@ pub enum Commands {
     List {
         #[arg(short, long, default_value = DEFAULT_CONFIG_FILE)]
         config: String,
-        #[arg(long, help = "Print selected workspace path only")]
+        #[arg(short = 'p', long, help = "Print selected workspace path only")]
         print_path_only: bool,
     },
 }
@@ -136,6 +136,24 @@ mod tests {
     }
 
     #[test]
+    fn test_cli_list_command_with_short_print_path_only() {
+        // list コマンドに-pフラグを指定
+        let args = vec!["ai-workspace", "list", "-p"];
+        let cli = Cli::try_parse_from(args).unwrap();
+
+        match cli.command {
+            Commands::List {
+                config,
+                print_path_only,
+            } => {
+                assert_eq!(config, DEFAULT_CONFIG_FILE);
+                assert!(print_path_only);
+            }
+            _ => panic!("Expected List command"),
+        }
+    }
+
+    #[test]
     fn test_cli_list_command_with_both_options() {
         // list コマンドに両方のオプションを指定
         let args = vec![
@@ -145,6 +163,24 @@ mod tests {
             "test.yml",
             "--print-path-only",
         ];
+        let cli = Cli::try_parse_from(args).unwrap();
+
+        match cli.command {
+            Commands::List {
+                config,
+                print_path_only,
+            } => {
+                assert_eq!(config, "test.yml");
+                assert!(print_path_only);
+            }
+            _ => panic!("Expected List command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_list_command_with_both_options_short() {
+        // list コマンドに両方のオプション（短縮形）を指定
+        let args = vec!["ai-workspace", "list", "-c", "test.yml", "-p"];
         let cli = Cli::try_parse_from(args).unwrap();
 
         match cli.command {
