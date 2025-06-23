@@ -1015,22 +1015,27 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
 ### Phase 8: 機能改善とユーザビリティ向上
 
 #### Task 8-1: CLI オプションの改善
-- [ ] **目的**: ユーザビリティの向上とオプション名の一貫性
+- [x] **目的**: ユーザビリティの向上とオプション名の一貫性
 - **詳細実装手順**:
-  1. [ ] `--print-path-only`オプションをshort option `-p`に変更
-  2. [ ] CLIヘルプメッセージの更新
-  3. [ ] 既存機能の動作確認
+  1. [x] `--print-path-only`オプションをshort option `-p`に変更
+  2. [x] `--print-path-only`を`--path-only`に変更
+  3. [x] CLIヘルプメッセージの更新
+  4. [x] 既存機能の動作確認
 - **実装内容**:
-  - `src/cli.rs`の`Commands::List`の`print_path_only`フィールドを更新
-  - `#[arg(long = "print-path-only", short = 'p')]`に変更
-  - ヘルプテキストとドキュメントの更新
+  - [x] `src/cli.rs`の`Commands::List`の`print_path_only`フィールドを更新
+  - [x] `#[arg(short = 'p', long = "path-only")]`に変更
+  - [x] ヘルプテキストとドキュメントの更新
+  - [x] 包括的なテスト追加
 - **テスト方法**: 
-  - `gwork list -p`で動作確認
-  - `gwork list --print-path-only`でも動作確認（後方互換性）
-  - ヘルプメッセージの確認
+  - [x] `gwork list -p`で動作確認
+  - [x] `gwork list --path-only`で動作確認
+  - [x] ヘルプメッセージの確認
+  - [x] 既存のオプション組み合わせテスト
 - **完了条件**: 
-  - short option `-p`が正常に動作する
-  - ヘルプメッセージが適切に表示される
+  - [x] short option `-p`が正常に動作する
+  - [x] long option `--path-only`が正常に動作する
+  - [x] ヘルプメッセージが適切に表示される
+  - [x] 全テストが通過する
 
 #### Task 8-2: 国際化 - 日本語から英語への変換
 - [ ] **目的**: 国際的な利用を想定した英語メッセージ化
@@ -1204,7 +1209,7 @@ worktreeの作成が可能な状態
 - [x] Task 7-2: 統合テストとドキュメント
 
 ### Phase 8: 機能改善とユーザビリティ向上
-- [ ] Task 8-1: CLIオプションの改善
+- [x] Task 8-1: CLIオプションの改善
 - [ ] Task 8-2: 国際化 - 日本語から英語への変換
 - [ ] Task 8-3: gwork rm コマンドの実装
 - [ ] Task 8-4: gwork init コマンドの実装
