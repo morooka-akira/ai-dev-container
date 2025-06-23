@@ -16,6 +16,22 @@ pub struct WorkspaceInfo {
     pub branch: String,
 }
 
+#[derive(Debug)]
+pub struct WorkspaceDetails {
+    #[allow(dead_code)]
+    pub name: String,
+    #[allow(dead_code)]
+    pub path: String,
+    #[allow(dead_code)]
+    pub branch: String,
+    pub created: String,
+    pub last_modified: String,
+    pub status: String,
+    pub files_info: String,
+    pub size: String,
+    pub recent_commits: Vec<String>,
+}
+
 impl WorkspaceManager {
     pub fn new() -> Result<Self, String> {
         let repo =
@@ -328,6 +344,211 @@ impl WorkspaceManager {
                 workspace_name
             ))
         }
+    }
+
+    pub fn get_workspace_details(
+        &self,
+        workspace_info: &WorkspaceInfo,
+    ) -> Result<WorkspaceDetails, String> {
+        let workspace_path = Path::new(&workspace_info.path);
+
+        // 作成日時を取得
+        let created = if workspace_path.exists() {
+            match workspace_path.metadata() {
+                Ok(metadata) => {
+                    if let Ok(created_time) = metadata.created() {
+                        match created_time.duration_since(std::time::UNIX_EPOCH) {
+                            Ok(duration) => {
+                                let datetime =
+                                    chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0)
+                                        .unwrap_or_else(chrono::Utc::now);
+                                datetime.format("%Y-%m-%d %H:%M:%S").to_string()
+                            }
+                            Err(_) => "不明".to_string(),
+                        }
+                    } else {
+                        "不明".to_string()
+                    }
+                }
+                Err(_) => "不明".to_string(),
+            }
+        } else {
+            "ワークスペースが存在しません".to_string()
+        };
+
+        // 最終更新日時を取得
+        let last_modified = if workspace_path.exists() {
+            match workspace_path.metadata() {
+                Ok(metadata) => {
+                    if let Ok(modified_time) = metadata.modified() {
+                        match modified_time.duration_since(std::time::UNIX_EPOCH) {
+                            Ok(duration) => {
+                                let datetime =
+                                    chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0)
+                                        .unwrap_or_else(chrono::Utc::now);
+                                datetime.format("%Y-%m-%d %H:%M:%S").to_string()
+                            }
+                            Err(_) => "不明".to_string(),
+                        }
+                    } else {
+                        "不明".to_string()
+                    }
+                }
+                Err(_) => "不明".to_string(),
+            }
+        } else {
+            "ワークスペースが存在しません".to_string()
+        };
+
+        // Git status情報を取得
+        let (status, files_info) = if workspace_path.exists() {
+            match Repository::open(workspace_path) {
+                Ok(repo) => match repo.statuses(None) {
+                    Ok(statuses) => {
+                        let mut modified_count = 0;
+                        let mut untracked_count = 0;
+                        let mut tracked_count = 0;
+
+                        for status_entry in statuses.iter() {
+                            let status = status_entry.status();
+                            if status.contains(git2::Status::WT_MODIFIED)
+                                || status.contains(git2::Status::WT_DELETED)
+                                || status.contains(git2::Status::INDEX_MODIFIED)
+                                || status.contains(git2::Status::INDEX_DELETED)
+                            {
+                                modified_count += 1;
+                            } else if status.contains(git2::Status::WT_NEW) {
+                                untracked_count += 1;
+                            } else {
+                                tracked_count += 1;
+                            }
+                        }
+
+                        let status_text = if modified_count > 0 {
+                            format!("Modified ({} files)", modified_count)
+                        } else {
+                            "Clean".to_string()
+                        };
+
+                        let files_text =
+                            format!("{} tracked, {} untracked", tracked_count, untracked_count);
+                        (status_text, files_text)
+                    }
+                    Err(_) => ("不明".to_string(), "不明".to_string()),
+                },
+                Err(_) => (
+                    "Gitリポジトリではありません".to_string(),
+                    "不明".to_string(),
+                ),
+            }
+        } else {
+            (
+                "ワークスペースが存在しません".to_string(),
+                "不明".to_string(),
+            )
+        };
+
+        // ディレクトリサイズを取得
+        let size = if workspace_path.exists() {
+            match Self::calculate_directory_size(workspace_path) {
+                Ok(size_bytes) => {
+                    if size_bytes < 1024 {
+                        format!("{} B", size_bytes)
+                    } else if size_bytes < 1024 * 1024 {
+                        format!("{:.1} KB", size_bytes as f64 / 1024.0)
+                    } else {
+                        format!("{:.1} MB", size_bytes as f64 / (1024.0 * 1024.0))
+                    }
+                }
+                Err(_) => "不明".to_string(),
+            }
+        } else {
+            "不明".to_string()
+        };
+
+        // 最近のコミット履歴を取得
+        let recent_commits = if workspace_path.exists() {
+            match Repository::open(workspace_path) {
+                Ok(repo) => match repo.head() {
+                    Ok(head) => match head.target() {
+                        Some(commit_id) => {
+                            let mut commits = Vec::new();
+                            let mut revwalk =
+                                repo.revwalk().unwrap_or_else(|_| repo.revwalk().unwrap());
+                            if revwalk.push(commit_id).is_ok() {
+                                for commit_oid in revwalk.take(3).flatten() {
+                                    if let Ok(commit) = repo.find_commit(commit_oid) {
+                                        let message = commit.message().unwrap_or("").trim();
+                                        let short_message = if message.chars().count() > 50 {
+                                            let truncated: String =
+                                                message.chars().take(47).collect();
+                                            format!("{}...", truncated)
+                                        } else {
+                                            message.to_string()
+                                        };
+
+                                        let time = commit.time();
+                                        let timestamp = time.seconds();
+                                        let now = chrono::Utc::now().timestamp();
+                                        let diff = now - timestamp;
+
+                                        let time_ago = if diff < 3600 {
+                                            format!("{}分前", diff / 60)
+                                        } else if diff < 86400 {
+                                            format!("{}時間前", diff / 3600)
+                                        } else {
+                                            format!("{}日前", diff / 86400)
+                                        };
+
+                                        commits.push(format!("- {} ({})", short_message, time_ago));
+                                    }
+                                }
+                            }
+                            commits
+                        }
+                        None => vec!["コミット履歴なし".to_string()],
+                    },
+                    Err(_) => vec!["HEADが見つかりません".to_string()],
+                },
+                Err(_) => vec!["Gitリポジトリではありません".to_string()],
+            }
+        } else {
+            vec!["ワークスペースが存在しません".to_string()]
+        };
+
+        Ok(WorkspaceDetails {
+            name: workspace_info.name.clone(),
+            path: workspace_info.path.clone(),
+            branch: workspace_info.branch.clone(),
+            created,
+            last_modified,
+            status,
+            files_info,
+            size,
+            recent_commits,
+        })
+    }
+
+    fn calculate_directory_size(path: &Path) -> Result<u64, std::io::Error> {
+        let mut total_size = 0;
+
+        if path.is_dir() {
+            for entry in fs::read_dir(path)? {
+                let entry = entry?;
+                let metadata = entry.metadata()?;
+
+                if metadata.is_dir() {
+                    // .gitディレクトリはスキップ
+                    if entry.file_name() != ".git" {
+                        total_size += Self::calculate_directory_size(&entry.path())?;
+                    }
+                } else {
+                    total_size += metadata.len();
+                }
+            }
+        }
+
+        Ok(total_size)
     }
 }
 
@@ -864,6 +1085,82 @@ mod tests {
 
             // ワークスペースディレクトリがカレントディレクトリとして設定されている
             assert!(current_dir.ends_with("workspace"));
+        }
+    }
+
+    #[test]
+    fn test_get_workspace_details_basic() {
+        if let Ok(manager) = WorkspaceManager::new() {
+            // テスト用のワークスペース情報を作成
+            let workspace_info = WorkspaceInfo {
+                name: "test-workspace".to_string(),
+                path: ".".to_string(), // 現在のディレクトリ（存在することが確実）
+                branch: "test/branch".to_string(),
+            };
+
+            // 詳細情報を取得
+            let result = manager.get_workspace_details(&workspace_info);
+            assert!(result.is_ok());
+
+            let details = result.unwrap();
+            assert_eq!(details.name, "test-workspace");
+            assert_eq!(details.path, ".");
+            assert_eq!(details.branch, "test/branch");
+
+            // 日時情報が取得されていることを確認
+            assert!(!details.created.is_empty());
+            assert!(!details.last_modified.is_empty());
+            assert!(details.created != "不明");
+            assert!(details.last_modified != "不明");
+
+            // ステータス情報が取得されていることを確認
+            assert!(!details.status.is_empty());
+            assert!(!details.files_info.is_empty());
+            assert!(!details.size.is_empty());
+
+            // コミット履歴が取得されていることを確認（空でも良い）
+            assert!(!details.recent_commits.is_empty() || details.recent_commits.is_empty());
+        }
+    }
+
+    #[test]
+    fn test_get_workspace_details_nonexistent_path() {
+        if let Ok(manager) = WorkspaceManager::new() {
+            // 存在しないパスのワークスペース情報を作成
+            let workspace_info = WorkspaceInfo {
+                name: "nonexistent-workspace".to_string(),
+                path: "/path/that/does/not/exist".to_string(),
+                branch: "test/branch".to_string(),
+            };
+
+            // 詳細情報を取得
+            let result = manager.get_workspace_details(&workspace_info);
+            assert!(result.is_ok());
+
+            let details = result.unwrap();
+            assert_eq!(details.name, "nonexistent-workspace");
+            assert_eq!(details.path, "/path/that/does/not/exist");
+            assert_eq!(details.branch, "test/branch");
+
+            // 存在しないパスの場合のエラーメッセージが設定されていることを確認
+            assert!(
+                details.created.contains("ワークスペースが存在しません")
+                    || details.created.contains("不明")
+            );
+            assert!(
+                details
+                    .last_modified
+                    .contains("ワークスペースが存在しません")
+                    || details.last_modified.contains("不明")
+            );
+            assert!(details.status.contains("ワークスペースが存在しません"));
+            assert!(details.files_info.contains("不明"));
+            assert!(details.size.contains("不明"));
+            assert!(
+                details
+                    .recent_commits
+                    .contains(&"ワークスペースが存在しません".to_string())
+            );
         }
     }
 }

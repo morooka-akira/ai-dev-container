@@ -115,7 +115,7 @@ fn run_tui() -> std::io::Result<Option<String>> {
 
     // Main loop
     let selected_path = loop {
-        terminal.draw(|f| tui::ui::draw(f, &app))?;
+        terminal.draw(|f| tui::ui::draw(f, &app, &workspace_manager))?;
 
         match tui::events::handle_events(&mut app)? {
             tui::events::AppAction::Quit => break None,

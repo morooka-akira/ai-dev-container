@@ -5,6 +5,7 @@ pub struct App {
     pub workspaces: Vec<WorkspaceInfo>,
     pub selected_index: usize,
     pub show_delete_dialog: bool,
+    pub show_details_dialog: bool,
 }
 
 impl App {
@@ -14,6 +15,7 @@ impl App {
             workspaces: Vec::new(),
             selected_index: 0,
             show_delete_dialog: false,
+            show_details_dialog: false,
         }
     }
 
@@ -73,6 +75,18 @@ impl App {
             self.selected_index = 0;
         }
     }
+
+    pub fn show_details(&mut self) {
+        self.show_details_dialog = true;
+    }
+
+    pub fn hide_details(&mut self) {
+        self.show_details_dialog = false;
+    }
+
+    pub fn is_in_details_view(&self) -> bool {
+        self.show_details_dialog
+    }
 }
 
 #[cfg(test)]
@@ -87,6 +101,7 @@ mod tests {
         assert!(app.workspaces.is_empty());
         assert_eq!(app.selected_index, 0);
         assert!(!app.show_delete_dialog);
+        assert!(!app.show_details_dialog);
     }
 
     #[test]
@@ -225,5 +240,17 @@ mod tests {
         app.remove_workspace("workspace1");
         assert_eq!(app.workspaces.len(), 1);
         assert_eq!(app.selected_index, 0); // インデックスが調整される
+    }
+
+    #[test]
+    fn test_details_dialog() {
+        let mut app = App::new();
+        assert!(!app.is_in_details_view());
+
+        app.show_details();
+        assert!(app.is_in_details_view());
+
+        app.hide_details();
+        assert!(!app.is_in_details_view());
     }
 }
