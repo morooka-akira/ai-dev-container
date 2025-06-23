@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 
 const DEFAULT_CONFIG_FILE: &str = "workspace.yml";
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 #[command(name = "ai-workspace")]
 #[command(about = "AI workspace management tool")]
 pub struct Cli {
@@ -10,7 +10,7 @@ pub struct Cli {
     pub command: Commands,
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 pub enum Commands {
     Start {
         task_name: String,

@@ -1,6 +1,8 @@
+use crate::error::{GworkError, GworkResult};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
+use tracing::{debug, error, warn};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WorkspaceConfig {
@@ -28,35 +30,73 @@ impl Default for WorkspaceConfig {
     }
 }
 
+/// 設定ファイルを読み込み、エラー時にGworkErrorを返す版
+#[allow(dead_code)]
+pub fn load_config_from_path_safe(path: &str) -> GworkResult<WorkspaceConfig> {
+    debug!(
+        "設定ファイルの読み込みを開始します（エラーハンドリング版）: {}",
+        path
+    );
+
+    if Path::new(path).exists() {
+        let content = fs::read_to_string(path).map_err(|e| {
+            error!("設定ファイルの読み込みに失敗しました: {} - {}", path, e);
+            GworkError::config(format!("設定ファイルの読み込みエラー: {}", e))
+        })?;
+
+        debug!(
+            "設定ファイルの内容を読み取りました: {} バイト",
+            content.len()
+        );
+
+        let config = serde_yaml::from_str::<WorkspaceConfig>(&content).map_err(|e| {
+            error!("設定ファイルの解析に失敗しました: {} - {}", path, e);
+            GworkError::config(format!("YAML解析エラー: {}", e))
+        })?;
+
+        debug!("設定ファイルを正常に読み込みました: {}", path);
+        Ok(config)
+    } else {
+        debug!("設定ファイルが存在しません: {}", path);
+        Err(GworkError::config(format!(
+            "設定ファイルが見つかりません: {}",
+            path
+        )))
+    }
+}
+
+/// 設定ファイルを読み込み、エラー時にデフォルト設定を返す版（後方互換性のため保持）
 pub fn load_config_from_path(path: &str) -> WorkspaceConfig {
+    debug!("設定ファイルの読み込みを開始します: {}", path);
+
     if Path::new(path).exists() {
         match fs::read_to_string(path) {
-            Ok(content) => match serde_yaml::from_str::<WorkspaceConfig>(&content) {
-                Ok(config) => {
-                    println!("設定ファイルを読み込みました: {}", path);
-                    config
-                }
-                Err(e) => {
-                    println!(
-                        "設定ファイルの解析エラー: {}. デフォルト設定を使用します",
-                        e
-                    );
-                    WorkspaceConfig::default()
-                }
-            },
-            Err(e) => {
-                println!(
-                    "設定ファイルの読み込みエラー: {}. デフォルト設定を使用します",
-                    e
+            Ok(content) => {
+                debug!(
+                    "設定ファイルの内容を読み取りました: {} バイト",
+                    content.len()
                 );
+                match serde_yaml::from_str::<WorkspaceConfig>(&content) {
+                    Ok(config) => {
+                        debug!("設定ファイルを正常に読み込みました: {}", path);
+                        config
+                    }
+                    Err(e) => {
+                        error!("設定ファイルの解析に失敗しました: {} - {}", path, e);
+                        warn!("デフォルト設定を使用します");
+                        WorkspaceConfig::default()
+                    }
+                }
+            }
+            Err(e) => {
+                error!("設定ファイルの読み込みに失敗しました: {} - {}", path, e);
+                warn!("デフォルト設定を使用します");
                 WorkspaceConfig::default()
             }
         }
     } else {
-        println!(
-            "設定ファイル {} が見つかりません. デフォルト設定を使用します",
-            path
-        );
+        debug!("設定ファイルが存在しません: {}", path);
+        debug!("デフォルト設定を使用します");
         WorkspaceConfig::default()
     }
 }

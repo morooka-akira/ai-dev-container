@@ -1,4 +1,6 @@
+use crate::error::GworkResult;
 use crate::workspace::{WorkspaceInfo, WorkspaceManager};
+use tracing::debug;
 
 pub struct App {
     pub should_quit: bool,
@@ -19,11 +21,17 @@ impl App {
         }
     }
 
-    pub fn load_workspaces(&mut self, workspace_manager: &WorkspaceManager) -> Result<(), String> {
+    pub fn load_workspaces(&mut self, workspace_manager: &WorkspaceManager) -> GworkResult<()> {
+        debug!("ワークスペース一覧をTUIアプリに読み込みます");
         self.workspaces = workspace_manager.list_workspaces()?;
         if self.workspaces.is_empty() {
+            debug!("ワークスペースが見つかりませんでした");
             self.selected_index = 0;
         } else {
+            debug!(
+                "{}件のワークスペースを読み込みました",
+                self.workspaces.len()
+            );
             self.selected_index = self.selected_index.min(self.workspaces.len() - 1);
         }
         Ok(())

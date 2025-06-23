@@ -78,10 +78,6 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
                         format!("  └─ {}", workspace.path),
                         Style::default().fg(Color::Gray),
                     )]),
-                    Line::from(vec![Span::styled(
-                        "  └─ Status: Clean  Files: --  Size: --",
-                        Style::default().fg(Color::Green),
-                    )]),
                 ];
 
                 ListItem::new(content).style(style)
