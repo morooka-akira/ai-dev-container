@@ -1,7 +1,9 @@
+use crate::error::{GworkError, GworkResult};
 use git2::{Repository, WorktreeAddOptions};
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+use tracing::{debug, error, info, warn};
 
 pub struct WorkspaceManager {
     #[allow(dead_code)]
@@ -33,9 +35,13 @@ pub struct WorkspaceDetails {
 }
 
 impl WorkspaceManager {
-    pub fn new() -> Result<Self, String> {
-        let repo =
-            Repository::open(".").map_err(|e| format!("Gitリポジトリが見つかりません: {}", e))?;
+    pub fn new() -> GworkResult<Self> {
+        debug!("WorkspaceManagerを初期化します");
+        let repo = Repository::open(".").map_err(|e| {
+            error!("Gitリポジトリのオープンに失敗しました: {}", e);
+            GworkError::git(format!("Gitリポジトリが見つかりません: {}", e))
+        })?;
+        info!("Gitリポジトリを正常にオープンしました");
         Ok(Self { repo })
     }
 
@@ -45,7 +51,7 @@ impl WorkspaceManager {
         task_name: &str,
         base_dir: &str,
         branch_prefix: &str,
-    ) -> Result<WorkspaceInfo, String> {
+    ) -> GworkResult<WorkspaceInfo> {
         self.create_workspace_with_config(task_name, base_dir, branch_prefix, &[], &[])
     }
 
@@ -56,7 +62,7 @@ impl WorkspaceManager {
         branch_prefix: &str,
         copy_files: &[String],
         pre_commands: &[String],
-    ) -> Result<WorkspaceInfo, String> {
+    ) -> GworkResult<WorkspaceInfo> {
         let timestamp = crate::utils::generate_timestamp();
         let workspace_name = format!("{}-{}", timestamp, task_name);
         let branch_name = if branch_prefix.is_empty() {
@@ -66,6 +72,10 @@ impl WorkspaceManager {
         };
         let workspace_path = format!("{}/{}", base_dir, workspace_name);
 
+        info!("ワークスペースを作成します: {}", workspace_name);
+        debug!("ワークスペースパス: {}", workspace_path);
+        debug!("ブランチ名: {}", branch_name);
+
         println!("🚀 Creating workspace:");
         println!("  Name: {}", workspace_name);
         println!("  Path: {}", workspace_path);
@@ -73,34 +83,65 @@ impl WorkspaceManager {
 
         // ベースディレクトリの作成
         if let Some(parent) = Path::new(&workspace_path).parent() {
-            fs::create_dir_all(parent).map_err(|e| format!("ディレクトリ作成エラー: {}", e))?;
+            debug!("ベースディレクトリを作成します: {}", parent.display());
+            fs::create_dir_all(parent).map_err(|e| {
+                error!(
+                    "ディレクトリ作成に失敗しました: {} - {}",
+                    parent.display(),
+                    e
+                );
+                GworkError::io(format!("ディレクトリ作成エラー: {}", e))
+            })?;
         }
 
         // Worktreeの作成
+        debug!("Worktreeを作成します");
         let opts = WorktreeAddOptions::new();
         self.repo
             .worktree(&workspace_name, Path::new(&workspace_path), Some(&opts))
-            .map_err(|e| format!("Worktree作成エラー: {}", e))?;
+            .map_err(|e| {
+                error!("Worktree作成に失敗しました: {}", e);
+                GworkError::git(format!("Worktree作成エラー: {}", e))
+            })?;
 
         // ブランチの作成と切り替え
-        let worktree_repo = Repository::open(&workspace_path)
-            .map_err(|e| format!("作成されたワークスペースのオープンエラー: {}", e))?;
+        debug!("作成されたワークスペースを開きます");
+        let worktree_repo = Repository::open(&workspace_path).map_err(|e| {
+            error!("作成されたワークスペースのオープンに失敗しました: {}", e);
+            GworkError::git(format!("作成されたワークスペースのオープンエラー: {}", e))
+        })?;
 
-        let head = worktree_repo
-            .head()
-            .map_err(|e| format!("HEADの取得エラー: {}", e))?;
-        let target_commit = head.target().ok_or("HEADのコミットIDが取得できません")?;
-        let commit = worktree_repo
-            .find_commit(target_commit)
-            .map_err(|e| format!("コミットの取得エラー: {}", e))?;
+        debug!("HEADコミットを取得します");
+        let head = worktree_repo.head().map_err(|e| {
+            error!("HEADの取得に失敗しました: {}", e);
+            GworkError::git(format!("HEADの取得エラー: {}", e))
+        })?;
 
+        let target_commit = head.target().ok_or_else(|| {
+            error!("HEADのコミットIDが取得できません");
+            GworkError::git("HEADのコミットIDが取得できません".to_string())
+        })?;
+
+        let commit = worktree_repo.find_commit(target_commit).map_err(|e| {
+            error!("コミットの取得に失敗しました: {}", e);
+            GworkError::git(format!("コミットの取得エラー: {}", e))
+        })?;
+
+        debug!("ブランチを作成します: {}", branch_name);
         let _branch = worktree_repo
             .branch(&branch_name, &commit, false)
-            .map_err(|e| format!("ブランチ作成エラー: {}", e))?;
+            .map_err(|e| {
+                error!("ブランチ作成に失敗しました: {} - {}", branch_name, e);
+                GworkError::git(format!("ブランチ作成エラー: {}", e))
+            })?;
 
+        debug!("ブランチに切り替えます: {}", branch_name);
         worktree_repo
             .set_head(&format!("refs/heads/{}", branch_name))
-            .map_err(|e| format!("ブランチ切り替えエラー: {}", e))?;
+            .map_err(|e| {
+                error!("ブランチ切り替えに失敗しました: {} - {}", branch_name, e);
+                GworkError::git(format!("ブランチ切り替えエラー: {}", e))
+            })?;
 
         // ファイルコピー処理
         if !copy_files.is_empty() {
@@ -210,11 +251,12 @@ impl WorkspaceManager {
         }
     }
 
-    pub fn list_workspaces(&self) -> Result<Vec<WorkspaceInfo>, String> {
-        let worktrees = self
-            .repo
-            .worktrees()
-            .map_err(|e| format!("Worktree一覧取得エラー: {}", e))?;
+    pub fn list_workspaces(&self) -> GworkResult<Vec<WorkspaceInfo>> {
+        debug!("ワークスペース一覧を取得します");
+        let worktrees = self.repo.worktrees().map_err(|e| {
+            error!("Worktree一覧取得に失敗しました: {}", e);
+            GworkError::git(format!("Worktree一覧取得エラー: {}", e))
+        })?;
 
         let mut workspace_list = Vec::new();
 
@@ -257,14 +299,17 @@ impl WorkspaceManager {
     }
 
     #[allow(dead_code)]
-    pub fn remove_workspace(&self, workspace_name: &str) -> Result<(), String> {
+    pub fn remove_workspace(&self, workspace_name: &str) -> GworkResult<()> {
+        info!("ワークスペースを削除します: {}", workspace_name);
         // まずワークスペースに関連するブランチ名を特定
         let mut branch_to_delete = None;
 
         // ワークスペース一覧からブランチ名を取得
+        debug!("削除対象のワークスペース情報を取得します");
         if let Ok(workspaces) = self.list_workspaces() {
             for workspace in workspaces {
                 if workspace.name == workspace_name {
+                    debug!("削除対象ブランチ: {}", workspace.branch.clone());
                     branch_to_delete = Some(workspace.branch.clone());
                     break;
                 }
@@ -272,23 +317,30 @@ impl WorkspaceManager {
         }
 
         // git worktree removeコマンドを使用してワークスペースを削除
+        debug!("git worktreeコマンドでワークスペースを削除します");
         let output = std::process::Command::new("git")
             .args(["worktree", "remove", "--force", workspace_name])
             .output()
-            .map_err(|e| format!("git worktree removeコマンド実行エラー: {}", e))?;
+            .map_err(|e| {
+                error!("git worktree removeコマンド実行に失敗しました: {}", e);
+                GworkError::git(format!("git worktree removeコマンド実行エラー: {}", e))
+            })?;
 
         let worktree_removed = output.status.success();
 
         // ワークスペースが削除された場合、ブランチも削除
         if worktree_removed {
+            info!("ワークスペースが正常に削除されました");
             // 明示的に作成されたブランチを削除
             if let Some(branch_name) = branch_to_delete {
+                debug!("関連ブランチを削除します: {}", branch_name);
                 let _ = std::process::Command::new("git")
                     .args(["branch", "-D", &branch_name])
                     .output();
             }
 
             // worktree作成時に自動生成されたブランチ（workspace_nameと同じ名前）も削除
+            debug!("自動生成ブランチを削除します: {}", workspace_name);
             let _ = std::process::Command::new("git")
                 .args(["branch", "-D", workspace_name])
                 .output();
@@ -303,15 +355,22 @@ impl WorkspaceManager {
             format!("../test/{}", workspace_name),
         ];
 
+        warn!("ワークスペース名による削除が失敗しました。パスでの削除を試行します");
         for path in &potential_paths {
+            debug!("パスでの削除を試行: {}", path);
             let output = std::process::Command::new("git")
                 .args(["worktree", "remove", "--force", path])
                 .output()
-                .map_err(|e| format!("git worktree removeコマンド実行エラー: {}", e))?;
+                .map_err(|e| {
+                    error!("git worktree removeコマンド実行に失敗しました: {}", e);
+                    GworkError::git(format!("git worktree removeコマンド実行エラー: {}", e))
+                })?;
 
             if output.status.success() {
+                info!("パスによる削除が成功しました: {}", path);
                 // ワークスペースが削除された場合、ブランチも削除
                 if let Some(branch_name) = &branch_to_delete {
+                    debug!("関連ブランチを削除します: {}", branch_name);
                     let _ = std::process::Command::new("git")
                         .args(["branch", "-D", branch_name])
                         .output();
@@ -337,19 +396,25 @@ impl WorkspaceManager {
         }
 
         if found_and_removed {
+            warn!("ファイルシステムからの直接削除が成功しました");
             Ok(())
         } else {
-            Err(format!(
+            error!("ワークスペースの削除に失敗しました: {}", workspace_name);
+            Err(GworkError::workspace(format!(
                 "ワークスペースが見つかりません: {}",
                 workspace_name
-            ))
+            )))
         }
     }
 
     pub fn get_workspace_details(
         &self,
         workspace_info: &WorkspaceInfo,
-    ) -> Result<WorkspaceDetails, String> {
+    ) -> GworkResult<WorkspaceDetails> {
+        debug!(
+            "ワークスペースの詳細情報を取得します: {}",
+            workspace_info.name
+        );
         let workspace_path = Path::new(&workspace_info.path);
 
         // 作成日時を取得
@@ -595,7 +660,7 @@ mod tests {
     }
 
     impl TestWorkspaceGuard {
-        fn new() -> Result<Self, String> {
+        fn new() -> GworkResult<Self> {
             Ok(Self {
                 manager: WorkspaceManager::new()?,
                 workspace_names: Vec::new(),
@@ -611,7 +676,7 @@ mod tests {
             task_name: &str,
             base_dir: &str,
             branch_prefix: &str,
-        ) -> Result<WorkspaceInfo, String> {
+        ) -> GworkResult<WorkspaceInfo> {
             self.manager
                 .create_workspace(task_name, base_dir, branch_prefix)
         }
@@ -782,7 +847,7 @@ mod tests {
                 }
                 Err(e) => {
                     // エラーメッセージが適切に返される
-                    assert!(!e.is_empty());
+                    assert!(!e.to_string().is_empty());
                 }
             }
         }
@@ -910,7 +975,11 @@ mod tests {
             assert!(result.is_err());
 
             if let Err(error_msg) = result {
-                assert!(error_msg.contains("ワークスペースが見つかりません"));
+                assert!(
+                    error_msg
+                        .to_string()
+                        .contains("ワークスペースが見つかりません")
+                );
             }
         }
     }
