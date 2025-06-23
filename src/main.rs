@@ -13,12 +13,13 @@ use tracing::{debug, error, info};
 use workspace::WorkspaceManager;
 
 fn main() {
-    // ログの初期化
-    init_logging();
+    let cli = Cli::parse();
+    
+    // TUIモードの場合はログレベルを下げる
+    let is_tui_mode = matches!(cli.command, Commands::List { print_path_only: false, .. });
+    init_logging(is_tui_mode);
 
     info!("gwork アプリケーションを開始します");
-
-    let cli = Cli::parse();
     debug!("コマンドライン引数を解析しました");
 
     let workspace_manager = match WorkspaceManager::new() {
@@ -87,7 +88,7 @@ fn main() {
                 }
             } else {
                 // 通常のTUIモード
-                println!("TUIモードを開始します...");
+                debug!("TUIモードを開始します");
                 debug!("TUIを初期化します");
 
                 match run_tui() {
@@ -124,18 +125,20 @@ fn main() {
 }
 
 /// ログの初期化
-fn init_logging() {
+fn init_logging(is_tui_mode: bool) {
     use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
     // 環境変数 RUST_LOG でログレベルを設定可能にする
-    // デフォルトは info レベル
+    // TUIモードの場合はwarnレベル、それ以外はinfoレベル
+    let default_level = if is_tui_mode { "gwork=warn" } else { "gwork=info" };
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("gwork=info"));
+        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new(default_level));
 
     tracing_subscriber::registry()
         .with(env_filter)
         .with(
             tracing_subscriber::fmt::layer()
+                .with_writer(std::io::stderr) // 標準エラー出力にログを出力
                 .with_target(false) // ターゲット（モジュール名）を表示しない
                 .with_thread_ids(false) // スレッドIDを表示しない
                 .with_file(false) // ファイル名を表示しない
