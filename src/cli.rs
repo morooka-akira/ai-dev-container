@@ -20,7 +20,11 @@ pub enum Commands {
     List {
         #[arg(short, long, default_value = DEFAULT_CONFIG_FILE)]
         config: String,
-        #[arg(long, help = "Print selected workspace path only")]
+        #[arg(
+            short = 'p',
+            long = "path-only",
+            help = "Print selected workspace path only"
+        )]
         print_path_only: bool,
     },
 }
@@ -118,9 +122,27 @@ mod tests {
     }
 
     #[test]
-    fn test_cli_list_command_with_print_path_only() {
-        // list コマンドに--print-path-onlyフラグを指定
-        let args = vec!["ai-workspace", "list", "--print-path-only"];
+    fn test_cli_list_command_with_path_only() {
+        // list コマンドに--path-onlyフラグを指定
+        let args = vec!["ai-workspace", "list", "--path-only"];
+        let cli = Cli::try_parse_from(args).unwrap();
+
+        match cli.command {
+            Commands::List {
+                config,
+                print_path_only,
+            } => {
+                assert_eq!(config, DEFAULT_CONFIG_FILE);
+                assert!(print_path_only);
+            }
+            _ => panic!("Expected List command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_list_command_with_short_print_path_only() {
+        // list コマンドに-pフラグを指定
+        let args = vec!["ai-workspace", "list", "-p"];
         let cli = Cli::try_parse_from(args).unwrap();
 
         match cli.command {
@@ -143,8 +165,26 @@ mod tests {
             "list",
             "--config",
             "test.yml",
-            "--print-path-only",
+            "--path-only",
         ];
+        let cli = Cli::try_parse_from(args).unwrap();
+
+        match cli.command {
+            Commands::List {
+                config,
+                print_path_only,
+            } => {
+                assert_eq!(config, "test.yml");
+                assert!(print_path_only);
+            }
+            _ => panic!("Expected List command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_list_command_with_both_options_short() {
+        // list コマンドに両方のオプション（短縮形）を指定
+        let args = vec!["ai-workspace", "list", "-c", "test.yml", "-p"];
         let cli = Cli::try_parse_from(args).unwrap();
 
         match cli.command {
