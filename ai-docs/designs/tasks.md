@@ -1000,17 +1000,154 @@ design.mdに基づいて、メンテナンス性と独立性を重視したス�
   - [x] ログ出力が適切
 
 #### Task 7-2: 統合テストとドキュメント
-- **目的**: 最終的な品質確保
+- [x] **目的**: 最終的な品質確保
 - **実装内容**:
-  - 統合テストの実装
-  - README.mdの更新
-  - 使用方法の文書化
+  - [x] 統合テストの実装
+  - [x] README.mdの更新
+  - [x] 使用方法の文書化
 - **テスト方法**: 
-  - 全機能の動作確認
-  - ドキュメントの正確性確認
+  - [x] 全機能の動作確認
+  - [x] ドキュメントの正確性確認
 - **完了条件**: 
-  - 全機能が統合されて正常に動作する
-  - ドキュメントが整備されている
+  - [x] 全機能が統合されて正常に動作する
+  - [x] ドキュメントが整備されている
+
+### Phase 8: 機能改善とユーザビリティ向上
+
+#### Task 8-1: CLI オプションの改善
+- [ ] **目的**: ユーザビリティの向上とオプション名の一貫性
+- **詳細実装手順**:
+  1. [ ] `--print-path-only`オプションをshort option `-p`に変更
+  2. [ ] CLIヘルプメッセージの更新
+  3. [ ] 既存機能の動作確認
+- **実装内容**:
+  - `src/cli.rs`の`Commands::List`の`print_path_only`フィールドを更新
+  - `#[arg(long = "print-path-only", short = 'p')]`に変更
+  - ヘルプテキストとドキュメントの更新
+- **テスト方法**: 
+  - `gwork list -p`で動作確認
+  - `gwork list --print-path-only`でも動作確認（後方互換性）
+  - ヘルプメッセージの確認
+- **完了条件**: 
+  - short option `-p`が正常に動作する
+  - ヘルプメッセージが適切に表示される
+
+#### Task 8-2: 国際化 - 日本語から英語への変換
+- [ ] **目的**: 国際的な利用を想定した英語メッセージ化
+- **詳細実装手順**:
+  1. [ ] ユーザー向けメッセージ（println!, eprintln!）の英語化
+  2. [ ] エラーメッセージの英語化
+  3. [ ] TUI画面の英語化
+  4. [ ] ログメッセージの英語化
+  5. [ ] ヘルプテキストの英語化
+- **実装内容**:
+  - `src/main.rs`: コマンド実行メッセージの英語化
+  - `src/workspace.rs`: ワークスペース操作メッセージの英語化
+  - `src/config.rs`: 設定ファイル関連メッセージの英語化
+  - `src/error.rs`: エラーメッセージの英語化
+  - `src/tui/ui.rs`: TUI表示テキストの英語化
+  - `src/cli.rs`: コマンドヘルプの英語化
+- **変換例**:
+  - `"ワークスペースを作成します"` → `"Creating workspace"`
+  - `"設定ファイルが見つかりません"` → `"Configuration file not found"`
+  - `"エラーが発生しました"` → `"An error occurred"`
+- **テスト方法**: 
+  - 全コマンドの実行とメッセージ確認
+  - エラーケースでのメッセージ確認
+  - TUI画面の表示確認
+- **完了条件**: 
+  - 全てのユーザー向けメッセージが英語化されている
+  - 機能的な動作は変更なし
+
+#### Task 8-3: gwork rm コマンドの実装
+- [ ] **目的**: 独立したワークスペース削除コマンドの提供
+- **詳細実装手順**:
+  1. [ ] `Commands`enumに`Rm`バリアントを追加
+  2. [ ] ワークスペース名による削除ロジックの実装
+  3. [ ] 確認プロンプトの実装
+  4. [ ] エラーハンドリングの追加
+- **実装内容**:
+  - `src/cli.rs`: `Rm { name: String }`コマンドの追加
+  - `src/main.rs`: `Commands::Rm`の処理追加
+  - `src/workspace.rs`: 既存の`remove_workspace`メソッドを活用
+  - 削除前の確認プロンプト実装
+- **CLIインターフェース**:
+  ```bash
+  gwork rm <workspace-name>
+  ```
+- **実装仕様**:
+  - ワークスペース名（例: `20250621-140000-example`）を指定
+  - 削除前に確認プロンプトを表示
+  - ワークスペースとブランチの両方を削除
+  - 存在しないワークスペースの場合は適切なエラー表示
+- **テスト方法**: 
+  - 正常なワークスペース削除
+  - 存在しないワークスペース名での削除試行
+  - 削除確認プロンプトのテスト
+- **完了条件**: 
+  - `gwork rm <name>`コマンドが正常に動作する
+  - 確認プロンプトが表示される
+  - エラーケースが適切にハンドリングされる
+
+#### Task 8-4: gwork init コマンドの実装
+- [ ] **目的**: 設定ファイルテンプレートの生成機能の提供
+- **詳細実装手順**:
+  1. [ ] `Commands`enumに`Init`バリアントを追加
+  2. [ ] デフォルト設定ファイルテンプレートの生成機能実装
+  3. [ ] 既存ファイルの上書き確認機能
+  4. [ ] カスタム出力パスオプションの実装
+- **実装内容**:
+  - `src/cli.rs`: `Init { output: Option<String> }`コマンドの追加
+  - `src/main.rs`: `Commands::Init`の処理追加
+  - `src/config.rs`: `generate_template_config()`関数の追加
+  - テンプレート設定ファイルの内容定義
+- **CLIインターフェース**:
+  ```bash
+  gwork init                        # デフォルト: workspace.yml
+  gwork init --output custom.yml    # カスタムパス指定
+  gwork init -o my-config.yml       # ショートオプション
+  ```
+- **実装仕様**:
+  - デフォルトで`workspace.yml`に設定ファイルテンプレートを生成
+  - `--output`/`-o`オプションで出力パスをカスタマイズ可能
+  - 既存ファイルがある場合は上書き確認プロンプト表示
+  - 生成される設定ファイルには適切なコメント付き
+- **テンプレート内容**:
+  ```yaml
+  # Gwork Configuration Template
+  # Workspace management settings for git worktree automation
+  
+  workspace:
+    # Base directory for creating workspaces (relative to current directory)
+    base_dir: "../workspaces"
+    
+    # Branch name prefix for new branches
+    branch_prefix: "work/"
+    
+    # Files to copy from main workspace to new workspace
+    copy_files:
+      - ".env"
+      - ".env.local"
+      # - "config/database.yml"
+      # - "docker-compose.override.yml"
+    
+    # Commands to execute after workspace creation
+    pre_commands:
+      - "npm install"
+      # - "cargo build"
+      # - "bundle install"
+      # - "docker-compose up -d"
+  ```
+- **テスト方法**: 
+  - デフォルトパスでの設定ファイル生成
+  - カスタムパスでの設定ファイル生成
+  - 既存ファイル上書き確認プロンプトのテスト
+  - 生成されたファイルの内容検証
+- **完了条件**: 
+  - `gwork init`コマンドが正常に動作する
+  - 生成された設定ファイルが適切な形式である
+  - 上書き確認機能が正常に動作する
+  - ヘルプメッセージが適切に表示される
 
 ## 実装順序とマイルストーン
 
@@ -1031,6 +1168,9 @@ worktreeの作成が可能な状態
 
 ### Milestone 6: 製品品質 (Task 7-1, 7-2)
 製品として使用可能な品質の状態
+
+### Milestone 7: 機能改善・国際化 (Task 8-1, 8-2, 8-3, 8-4)
+ユーザビリティ向上と国際対応の完了
 
 ## 全タスク一覧（チェックリスト）
 
@@ -1061,7 +1201,13 @@ worktreeの作成が可能な状態
 
 ### Phase 7: 最終仕上げとテスト
 - [x] Task 7-1: エラーハンドリングの強化
-- [ ] Task 7-2: 統合テストとドキュメント
+- [x] Task 7-2: 統合テストとドキュメント
+
+### Phase 8: 機能改善とユーザビリティ向上
+- [ ] Task 8-1: CLIオプションの改善
+- [ ] Task 8-2: 国際化 - 日本語から英語への変換
+- [ ] Task 8-3: gwork rm コマンドの実装
+- [ ] Task 8-4: gwork init コマンドの実装
 
 ## 次のステップ
 
