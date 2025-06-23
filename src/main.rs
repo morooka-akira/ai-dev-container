@@ -16,10 +16,13 @@ fn main() {
     let cli = Cli::parse();
 
     // TUIモードの場合はログレベルを下げる
-    let is_tui_mode = matches!(cli.command, Commands::List {
-        print_path_only: false,
-        ..
-    });
+    let is_tui_mode = matches!(
+        cli.command,
+        Commands::List {
+            print_path_only: false,
+            ..
+        }
+    );
     init_logging(is_tui_mode);
 
     debug!("gwork アプリケーションを開始します");
