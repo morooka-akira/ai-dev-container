@@ -155,9 +155,6 @@ impl WorkspaceManager {
             self.execute_pre_commands(Path::new(&workspace_path), pre_commands);
         }
 
-        println!("✅ Workspace created successfully!");
-        println!("📁 Path: {}", workspace_path);
-        println!("🌿 Branch: {}", branch_name);
         println!("\nTo enter the workspace:");
         println!("  cd {}", workspace_path);
 
