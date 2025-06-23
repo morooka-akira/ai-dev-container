@@ -43,7 +43,6 @@ fn main() {
             debug!("使用する設定ファイル: {}", config);
 
             let config = load_config_from_path(&config);
-            println!("start コマンドが実行されました: {}", task_name);
 
             match workspace_manager.create_workspace_with_config(
                 &task_name,
@@ -54,7 +53,6 @@ fn main() {
             ) {
                 Ok(info) => {
                     debug!("ワークスペース作成が完了しました: {}", info.name);
-                    println!("✅ ワークスペース準備完了: {:?}", info);
                     Ok(())
                 }
                 Err(e) => {
