@@ -20,7 +20,7 @@ pub enum Commands {
     List {
         #[arg(short, long, default_value = DEFAULT_CONFIG_FILE)]
         config: String,
-        #[arg(short = 'p', long, help = "Print selected workspace path only")]
+        #[arg(short = 'p', long = "path-only", help = "Print selected workspace path only")]
         print_path_only: bool,
     },
 }
@@ -118,9 +118,9 @@ mod tests {
     }
 
     #[test]
-    fn test_cli_list_command_with_print_path_only() {
-        // list コマンドに--print-path-onlyフラグを指定
-        let args = vec!["ai-workspace", "list", "--print-path-only"];
+    fn test_cli_list_command_with_path_only() {
+        // list コマンドに--path-onlyフラグを指定
+        let args = vec!["ai-workspace", "list", "--path-only"];
         let cli = Cli::try_parse_from(args).unwrap();
 
         match cli.command {
@@ -161,7 +161,7 @@ mod tests {
             "list",
             "--config",
             "test.yml",
-            "--print-path-only",
+            "--path-only",
         ];
         let cli = Cli::try_parse_from(args).unwrap();
 
