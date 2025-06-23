@@ -14,9 +14,12 @@ use workspace::WorkspaceManager;
 
 fn main() {
     let cli = Cli::parse();
-    
+
     // TUIモードの場合はログレベルを下げる
-    let is_tui_mode = matches!(cli.command, Commands::List { print_path_only: false, .. });
+    let is_tui_mode = matches!(cli.command, Commands::List {
+        print_path_only: false,
+        ..
+    });
     init_logging(is_tui_mode);
 
     info!("gwork アプリケーションを開始します");
@@ -129,8 +132,18 @@ fn init_logging(is_tui_mode: bool) {
     use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
     // 環境変数 RUST_LOG でログレベルを設定可能にする
-    // TUIモードの場合はwarnレベル、それ以外はinfoレベル
-    let default_level = if is_tui_mode { "gwork=warn" } else { "gwork=info" };
+    // デバッグビルドとリリースビルドで異なるデフォルトレベル
+    let default_level = if cfg!(debug_assertions) {
+        // デバッグビルド
+        if is_tui_mode {
+            "gwork=warn"
+        } else {
+            "gwork=info"
+        }
+    } else {
+        // リリースビルド：エラーのみ表示
+        "gwork=error"
+    };
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new(default_level));
 
