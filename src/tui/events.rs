@@ -18,19 +18,22 @@ pub fn handle_events(app: &mut App) -> std::io::Result<AppAction> {
                     if app.is_in_delete_confirmation() {
                         app.hide_delete_confirmation();
                         Ok(AppAction::None)
+                    } else if app.is_in_details_view() {
+                        app.hide_details();
+                        Ok(AppAction::None)
                     } else {
                         app.quit();
                         Ok(AppAction::Quit)
                     }
                 }
                 KeyCode::Down | KeyCode::Char('j') => {
-                    if !app.is_in_delete_confirmation() {
+                    if !app.is_in_delete_confirmation() && !app.is_in_details_view() {
                         app.next();
                     }
                     Ok(AppAction::None)
                 }
                 KeyCode::Up | KeyCode::Char('k') => {
-                    if !app.is_in_delete_confirmation() {
+                    if !app.is_in_delete_confirmation() && !app.is_in_details_view() {
                         app.previous();
                     }
                     Ok(AppAction::None)
@@ -39,6 +42,10 @@ pub fn handle_events(app: &mut App) -> std::io::Result<AppAction> {
                     if app.is_in_delete_confirmation() {
                         // 削除確認ダイアログでのEnterキー処理
                         Ok(AppAction::None)
+                    } else if app.is_in_details_view() {
+                        // 詳細ダイアログでのEnterキー処理（閉じる）
+                        app.hide_details();
+                        Ok(AppAction::None)
                     } else if let Some(workspace) = app.get_selected_workspace() {
                         Ok(AppAction::NavigateToWorkspace(workspace.path.clone()))
                     } else {
@@ -46,7 +53,10 @@ pub fn handle_events(app: &mut App) -> std::io::Result<AppAction> {
                     }
                 }
                 KeyCode::Char('d') => {
-                    if !app.is_in_delete_confirmation() && app.get_selected_workspace().is_some() {
+                    if !app.is_in_delete_confirmation()
+                        && !app.is_in_details_view()
+                        && app.get_selected_workspace().is_some()
+                    {
                         app.show_delete_confirmation();
                     }
                     Ok(AppAction::None)
@@ -70,7 +80,22 @@ pub fn handle_events(app: &mut App) -> std::io::Result<AppAction> {
                     }
                     Ok(AppAction::None)
                 }
-                _ => Ok(AppAction::None),
+                KeyCode::Char('i') => {
+                    if !app.is_in_delete_confirmation()
+                        && !app.is_in_details_view()
+                        && app.get_selected_workspace().is_some()
+                    {
+                        app.show_details();
+                    }
+                    Ok(AppAction::None)
+                }
+                _ => {
+                    // 詳細ダイアログ表示中は任意のキーで閉じる
+                    if app.is_in_details_view() {
+                        app.hide_details();
+                    }
+                    Ok(AppAction::None)
+                }
             }
         } else {
             Ok(AppAction::None)
