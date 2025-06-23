@@ -1,70 +1,70 @@
 use thiserror::Error;
 
-/// アプリケーション全体で使用する統一エラー型
+/// Unified error type used throughout the application
 #[derive(Error, Debug)]
 pub enum GworkError {
-    /// Gitリポジトリ関連のエラー
-    #[error("Gitリポジトリエラー: {message}")]
+    /// Git repository related errors
+    #[error("Git repository error: {message}")]
     Git { message: String },
 
-    /// ファイル操作関連のエラー
-    #[error("ファイル操作エラー: {message}")]
+    /// File operation related errors
+    #[error("File operation error: {message}")]
     Io { message: String },
 
-    /// 設定ファイル関連のエラー
-    #[error("設定ファイルエラー: {message}")]
+    /// Configuration file related errors
+    #[error("Configuration file error: {message}")]
     Config { message: String },
 
-    /// ワークスペース関連のエラー
-    #[error("ワークスペースエラー: {message}")]
+    /// Workspace related errors
+    #[error("Workspace error: {message}")]
     Workspace { message: String },
 
-    /// TUI関連のエラー
-    #[error("TUIエラー: {message}")]
+    /// TUI related errors
+    #[error("TUI error: {message}")]
     Tui { message: String },
 
-    /// 一般的なエラー
-    #[error("エラー: {message}")]
+    /// General errors
+    #[error("Error: {message}")]
     General { message: String },
 }
 
 impl GworkError {
-    /// Gitエラーを作成
+    /// Create Git error
     pub fn git<S: Into<String>>(message: S) -> Self {
         Self::Git {
             message: message.into(),
         }
     }
 
-    /// ファイル操作エラーを作成
+    /// Create file operation error
     pub fn io<S: Into<String>>(message: S) -> Self {
         Self::Io {
             message: message.into(),
         }
     }
 
-    /// 設定ファイルエラーを作成
+    /// Create configuration file error
     pub fn config<S: Into<String>>(message: S) -> Self {
         Self::Config {
             message: message.into(),
         }
     }
 
-    /// ワークスペースエラーを作成
+    /// Create workspace error
     pub fn workspace<S: Into<String>>(message: S) -> Self {
         Self::Workspace {
             message: message.into(),
         }
     }
 
-    /// TUIエラーを作成
+    /// Create TUI error
     pub fn tui<S: Into<String>>(message: S) -> Self {
         Self::Tui {
             message: message.into(),
         }
     }
 
-    /// 一般的なエラーを作成
+    /// Create general error
     #[allow(dead_code)]
     pub fn general<S: Into<String>>(message: S) -> Self {
         Self::General {
@@ -76,32 +76,32 @@ impl GworkError {
 impl From<git2::Error> for GworkError {
     fn from(err: git2::Error) -> Self {
         let message = match err.code() {
-            git2::ErrorCode::NotFound => "指定されたリソースが見つかりません".to_string(),
-            git2::ErrorCode::Exists => "リソースが既に存在します".to_string(),
-            git2::ErrorCode::Ambiguous => "リソースの指定があいまいです".to_string(),
-            git2::ErrorCode::BufSize => "バッファサイズが不足しています".to_string(),
-            git2::ErrorCode::User => "ユーザー操作がキャンセルされました".to_string(),
-            git2::ErrorCode::BareRepo => "ベアリポジトリでは実行できません".to_string(),
-            git2::ErrorCode::UnbornBranch => "ブランチが存在しません".to_string(),
-            git2::ErrorCode::Unmerged => "マージされていない変更があります".to_string(),
-            git2::ErrorCode::NotFastForward => "Fast-forwardできません".to_string(),
-            git2::ErrorCode::InvalidSpec => "無効な仕様です".to_string(),
-            git2::ErrorCode::Conflict => "コンフリクトが発生しています".to_string(),
-            git2::ErrorCode::Locked => "リソースがロックされています".to_string(),
-            git2::ErrorCode::Modified => "ファイルが変更されています".to_string(),
-            git2::ErrorCode::Auth => "認証に失敗しました".to_string(),
-            git2::ErrorCode::Certificate => "証明書エラーです".to_string(),
-            git2::ErrorCode::Applied => "パッチが既に適用されています".to_string(),
-            git2::ErrorCode::Peel => "オブジェクトの展開に失敗しました".to_string(),
-            git2::ErrorCode::Eof => "ファイルの終端に達しました".to_string(),
-            git2::ErrorCode::Invalid => "無効な操作です".to_string(),
-            git2::ErrorCode::Uncommitted => "コミットされていない変更があります".to_string(),
-            git2::ErrorCode::Directory => "ディレクトリが存在しません".to_string(),
-            git2::ErrorCode::MergeConflict => "マージコンフリクトが発生しています".to_string(),
-            git2::ErrorCode::HashsumMismatch => "ハッシュサムが一致しません".to_string(),
-            git2::ErrorCode::IndexDirty => "インデックスが変更されています".to_string(),
-            git2::ErrorCode::ApplyFail => "パッチの適用に失敗しました".to_string(),
-            _ => format!("Gitエラーが発生しました: {}", err.message()),
+            git2::ErrorCode::NotFound => "Specified resource not found".to_string(),
+            git2::ErrorCode::Exists => "Resource already exists".to_string(),
+            git2::ErrorCode::Ambiguous => "Resource specification is ambiguous".to_string(),
+            git2::ErrorCode::BufSize => "Buffer size insufficient".to_string(),
+            git2::ErrorCode::User => "User operation was cancelled".to_string(),
+            git2::ErrorCode::BareRepo => "Cannot execute in bare repository".to_string(),
+            git2::ErrorCode::UnbornBranch => "Branch does not exist".to_string(),
+            git2::ErrorCode::Unmerged => "Unmerged changes exist".to_string(),
+            git2::ErrorCode::NotFastForward => "Cannot fast-forward".to_string(),
+            git2::ErrorCode::InvalidSpec => "Invalid specification".to_string(),
+            git2::ErrorCode::Conflict => "Conflict occurred".to_string(),
+            git2::ErrorCode::Locked => "Resource is locked".to_string(),
+            git2::ErrorCode::Modified => "File has been modified".to_string(),
+            git2::ErrorCode::Auth => "Authentication failed".to_string(),
+            git2::ErrorCode::Certificate => "Certificate error".to_string(),
+            git2::ErrorCode::Applied => "Patch already applied".to_string(),
+            git2::ErrorCode::Peel => "Failed to expand object".to_string(),
+            git2::ErrorCode::Eof => "Reached end of file".to_string(),
+            git2::ErrorCode::Invalid => "Invalid operation".to_string(),
+            git2::ErrorCode::Uncommitted => "Uncommitted changes exist".to_string(),
+            git2::ErrorCode::Directory => "Directory does not exist".to_string(),
+            git2::ErrorCode::MergeConflict => "Merge conflict occurred".to_string(),
+            git2::ErrorCode::HashsumMismatch => "Hashsum mismatch".to_string(),
+            git2::ErrorCode::IndexDirty => "Index has been modified".to_string(),
+            git2::ErrorCode::ApplyFail => "Failed to apply patch".to_string(),
+            _ => format!("Git error occurred: {}", err.message()),
         };
         Self::git(message)
     }
@@ -110,26 +110,24 @@ impl From<git2::Error> for GworkError {
 impl From<std::io::Error> for GworkError {
     fn from(err: std::io::Error) -> Self {
         let message = match err.kind() {
-            std::io::ErrorKind::NotFound => {
-                "ファイルまたはディレクトリが見つかりません".to_string()
-            }
-            std::io::ErrorKind::PermissionDenied => "アクセス権限がありません".to_string(),
-            std::io::ErrorKind::ConnectionRefused => "接続が拒否されました".to_string(),
-            std::io::ErrorKind::ConnectionReset => "接続がリセットされました".to_string(),
-            std::io::ErrorKind::ConnectionAborted => "接続が中止されました".to_string(),
-            std::io::ErrorKind::NotConnected => "接続されていません".to_string(),
-            std::io::ErrorKind::AddrInUse => "アドレスが使用中です".to_string(),
-            std::io::ErrorKind::AddrNotAvailable => "アドレスが利用できません".to_string(),
-            std::io::ErrorKind::BrokenPipe => "パイプが破損しています".to_string(),
-            std::io::ErrorKind::AlreadyExists => "ファイルが既に存在します".to_string(),
-            std::io::ErrorKind::WouldBlock => "操作がブロックされます".to_string(),
-            std::io::ErrorKind::InvalidInput => "無効な入力です".to_string(),
-            std::io::ErrorKind::InvalidData => "無効なデータです".to_string(),
-            std::io::ErrorKind::TimedOut => "タイムアウトしました".to_string(),
-            std::io::ErrorKind::WriteZero => "書き込みできませんでした".to_string(),
-            std::io::ErrorKind::Interrupted => "操作が中断されました".to_string(),
-            std::io::ErrorKind::UnexpectedEof => "予期しないファイル終端です".to_string(),
-            _ => format!("I/Oエラーが発生しました: {}", err),
+            std::io::ErrorKind::NotFound => "File or directory not found".to_string(),
+            std::io::ErrorKind::PermissionDenied => "Permission denied".to_string(),
+            std::io::ErrorKind::ConnectionRefused => "Connection refused".to_string(),
+            std::io::ErrorKind::ConnectionReset => "Connection reset".to_string(),
+            std::io::ErrorKind::ConnectionAborted => "Connection aborted".to_string(),
+            std::io::ErrorKind::NotConnected => "Not connected".to_string(),
+            std::io::ErrorKind::AddrInUse => "Address in use".to_string(),
+            std::io::ErrorKind::AddrNotAvailable => "Address not available".to_string(),
+            std::io::ErrorKind::BrokenPipe => "Broken pipe".to_string(),
+            std::io::ErrorKind::AlreadyExists => "File already exists".to_string(),
+            std::io::ErrorKind::WouldBlock => "Operation would block".to_string(),
+            std::io::ErrorKind::InvalidInput => "Invalid input".to_string(),
+            std::io::ErrorKind::InvalidData => "Invalid data".to_string(),
+            std::io::ErrorKind::TimedOut => "Timed out".to_string(),
+            std::io::ErrorKind::WriteZero => "Write zero".to_string(),
+            std::io::ErrorKind::Interrupted => "Interrupted".to_string(),
+            std::io::ErrorKind::UnexpectedEof => "Unexpected end of file".to_string(),
+            _ => format!("I/O error occurred: {err}"),
         };
         Self::io(message)
     }
@@ -137,11 +135,11 @@ impl From<std::io::Error> for GworkError {
 
 impl From<serde_yaml::Error> for GworkError {
     fn from(err: serde_yaml::Error) -> Self {
-        Self::config(format!("YAML設定ファイルの解析に失敗しました: {}", err))
+        Self::config(format!("Failed to parse YAML configuration file: {err}"))
     }
 }
 
-/// アプリケーション全体で使用する統一Result型
+/// Unified Result type used throughout the application
 pub type GworkResult<T> = Result<T, GworkError>;
 
 #[cfg(test)]
@@ -150,38 +148,38 @@ mod tests {
 
     #[test]
     fn test_error_creation() {
-        let git_error = GworkError::git("テストGitエラー");
+        let git_error = GworkError::git("Test Git error");
         assert!(matches!(git_error, GworkError::Git { .. }));
         assert_eq!(
             git_error.to_string(),
-            "Gitリポジトリエラー: テストGitエラー"
+            "Git repository error: Test Git error"
         );
 
-        let io_error = GworkError::io("テストIOエラー");
+        let io_error = GworkError::io("Test IO error");
         assert!(matches!(io_error, GworkError::Io { .. }));
-        assert_eq!(io_error.to_string(), "ファイル操作エラー: テストIOエラー");
+        assert_eq!(io_error.to_string(), "File operation error: Test IO error");
 
-        let config_error = GworkError::config("テスト設定エラー");
+        let config_error = GworkError::config("Test config error");
         assert!(matches!(config_error, GworkError::Config { .. }));
         assert_eq!(
             config_error.to_string(),
-            "設定ファイルエラー: テスト設定エラー"
+            "Configuration file error: Test config error"
         );
 
-        let workspace_error = GworkError::workspace("テストワークスペースエラー");
+        let workspace_error = GworkError::workspace("Test workspace error");
         assert!(matches!(workspace_error, GworkError::Workspace { .. }));
         assert_eq!(
             workspace_error.to_string(),
-            "ワークスペースエラー: テストワークスペースエラー"
+            "Workspace error: Test workspace error"
         );
 
-        let tui_error = GworkError::tui("テストTUIエラー");
+        let tui_error = GworkError::tui("Test TUI error");
         assert!(matches!(tui_error, GworkError::Tui { .. }));
-        assert_eq!(tui_error.to_string(), "TUIエラー: テストTUIエラー");
+        assert_eq!(tui_error.to_string(), "TUI error: Test TUI error");
 
-        let general_error = GworkError::general("テスト一般エラー");
+        let general_error = GworkError::general("Test general error");
         assert!(matches!(general_error, GworkError::General { .. }));
-        assert_eq!(general_error.to_string(), "エラー: テスト一般エラー");
+        assert_eq!(general_error.to_string(), "Error: Test general error");
     }
 
     #[test]
@@ -192,7 +190,7 @@ mod tests {
         assert!(
             gwork_err
                 .to_string()
-                .contains("ファイルまたはディレクトリが見つかりません")
+                .contains("File or directory not found")
         );
     }
 
@@ -205,22 +203,22 @@ mod tests {
         assert!(
             gwork_err
                 .to_string()
-                .contains("YAML設定ファイルの解析に失敗しました")
+                .contains("Failed to parse YAML configuration file")
         );
     }
 
     #[test]
     fn test_error_display() {
-        let error = GworkError::workspace("テストメッセージ");
-        let formatted = format!("{}", error);
-        assert_eq!(formatted, "ワークスペースエラー: テストメッセージ");
+        let error = GworkError::workspace("Test message");
+        let formatted = format!("{error}");
+        assert_eq!(formatted, "Workspace error: Test message");
     }
 
     #[test]
     fn test_error_debug() {
-        let error = GworkError::git("デバッグテスト");
-        let debug_str = format!("{:?}", error);
+        let error = GworkError::git("Debug test");
+        let debug_str = format!("{error:?}");
         assert!(debug_str.contains("Git"));
-        assert!(debug_str.contains("デバッグテスト"));
+        assert!(debug_str.contains("Debug test"));
     }
 }

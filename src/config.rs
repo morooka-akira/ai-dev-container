@@ -30,73 +30,66 @@ impl Default for WorkspaceConfig {
     }
 }
 
-/// 設定ファイルを読み込み、エラー時にGworkErrorを返す版
+/// Load configuration file and return GworkError on error
 #[allow(dead_code)]
 pub fn load_config_from_path_safe(path: &str) -> GworkResult<WorkspaceConfig> {
     debug!(
-        "設定ファイルの読み込みを開始します（エラーハンドリング版）: {}",
+        "Starting configuration file loading (error handling version): {}",
         path
     );
 
     if Path::new(path).exists() {
         let content = fs::read_to_string(path).map_err(|e| {
-            error!("設定ファイルの読み込みに失敗しました: {} - {}", path, e);
-            GworkError::config(format!("設定ファイルの読み込みエラー: {}", e))
+            error!("Failed to read configuration file: {} - {}", path, e);
+            GworkError::config(format!("Configuration file read error: {e}"))
         })?;
 
-        debug!(
-            "設定ファイルの内容を読み取りました: {} バイト",
-            content.len()
-        );
+        debug!("Configuration file content read: {} bytes", content.len());
 
         let config = serde_yaml::from_str::<WorkspaceConfig>(&content).map_err(|e| {
-            error!("設定ファイルの解析に失敗しました: {} - {}", path, e);
-            GworkError::config(format!("YAML解析エラー: {}", e))
+            error!("Failed to parse configuration file: {} - {}", path, e);
+            GworkError::config(format!("YAML parsing error: {e}"))
         })?;
 
-        debug!("設定ファイルを正常に読み込みました: {}", path);
+        debug!("Configuration file loaded successfully: {}", path);
         Ok(config)
     } else {
-        debug!("設定ファイルが存在しません: {}", path);
+        debug!("Configuration file does not exist: {}", path);
         Err(GworkError::config(format!(
-            "設定ファイルが見つかりません: {}",
-            path
+            "Configuration file not found: {path}"
         )))
     }
 }
 
-/// 設定ファイルを読み込み、エラー時にデフォルト設定を返す版（後方互換性のため保持）
+/// Load configuration file and return default settings on error (kept for backward compatibility)
 pub fn load_config_from_path(path: &str) -> WorkspaceConfig {
-    debug!("設定ファイルの読み込みを開始します: {}", path);
+    debug!("Starting configuration file loading: {}", path);
 
     if Path::new(path).exists() {
         match fs::read_to_string(path) {
             Ok(content) => {
-                debug!(
-                    "設定ファイルの内容を読み取りました: {} バイト",
-                    content.len()
-                );
+                debug!("Configuration file content read: {} bytes", content.len());
                 match serde_yaml::from_str::<WorkspaceConfig>(&content) {
                     Ok(config) => {
-                        debug!("設定ファイルを正常に読み込みました: {}", path);
+                        debug!("Configuration file loaded successfully: {}", path);
                         config
                     }
                     Err(e) => {
-                        error!("設定ファイルの解析に失敗しました: {} - {}", path, e);
-                        warn!("デフォルト設定を使用します");
+                        error!("Failed to parse configuration file: {} - {}", path, e);
+                        warn!("Using default settings");
                         WorkspaceConfig::default()
                     }
                 }
             }
             Err(e) => {
-                error!("設定ファイルの読み込みに失敗しました: {} - {}", path, e);
-                warn!("デフォルト設定を使用します");
+                error!("Failed to read configuration file: {} - {}", path, e);
+                warn!("Using default settings");
                 WorkspaceConfig::default()
             }
         }
     } else {
-        debug!("設定ファイルが存在しません: {}", path);
-        debug!("デフォルト設定を使用します");
+        debug!("Configuration file does not exist: {}", path);
+        debug!("Using default settings");
         WorkspaceConfig::default()
     }
 }
@@ -104,7 +97,7 @@ pub fn load_config_from_path(path: &str) -> WorkspaceConfig {
 pub fn _test_serialize() {
     let config = WorkspaceConfig::default();
     let yaml = serde_yaml::to_string(&config).unwrap();
-    println!("Default config YAML:\n{}", yaml);
+    println!("Default config YAML:\n{yaml}");
 }
 
 #[cfg(test)]
@@ -153,14 +146,14 @@ workspace:
     #[test]
     fn test_load_config_from_path_nonexistent_file() {
         let config = load_config_from_path("nonexistent.yml");
-        // 存在しないファイルの場合はデフォルト設定が返される
+        // Default settings are returned for non-existent files
         assert_eq!(config.workspace.base_dir, "../workspaces");
         assert_eq!(config.workspace.branch_prefix, "work/");
     }
 
     #[test]
     fn test_load_config_from_path_valid_file() {
-        // テスト用の一時ファイルを作成
+        // Create temporary file for testing
         let test_content = r#"
 workspace:
   base_dir: "../test-workspaces"
@@ -175,13 +168,13 @@ workspace:
         assert_eq!(config.workspace.base_dir, "../test-workspaces");
         assert_eq!(config.workspace.branch_prefix, "test/");
 
-        // テストファイルを削除
+        // Delete test file
         fs::remove_file(test_file).unwrap();
     }
 
     #[test]
     fn test_load_config_from_path_invalid_yaml() {
-        // 不正なYAMLのテスト用ファイルを作成
+        // Create test file with invalid YAML
         let invalid_yaml = r#"
 workspace:
   base_dir: "../test-workspaces"
@@ -193,11 +186,11 @@ workspace:
         fs::write(test_file, invalid_yaml).unwrap();
 
         let config = load_config_from_path(test_file);
-        // 不正なYAMLの場合はデフォルト設定が返される
+        // Default settings are returned for invalid YAML
         assert_eq!(config.workspace.base_dir, "../workspaces");
         assert_eq!(config.workspace.branch_prefix, "work/");
 
-        // テストファイルを削除
+        // Delete test file
         fs::remove_file(test_file).unwrap();
     }
 }
