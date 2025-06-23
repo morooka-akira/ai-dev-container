@@ -20,7 +20,11 @@ pub enum Commands {
     List {
         #[arg(short, long, default_value = DEFAULT_CONFIG_FILE)]
         config: String,
-        #[arg(short = 'p', long = "path-only", help = "Print selected workspace path only")]
+        #[arg(
+            short = 'p',
+            long = "path-only",
+            help = "Print selected workspace path only"
+        )]
         print_path_only: bool,
     },
 }
