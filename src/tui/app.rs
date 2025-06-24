@@ -22,16 +22,13 @@ impl App {
     }
 
     pub fn load_workspaces(&mut self, workspace_manager: &WorkspaceManager) -> GworkResult<()> {
-        debug!("ワークスペース一覧をTUIアプリに読み込みます");
+        debug!("Loading workspace list into TUI app");
         self.workspaces = workspace_manager.list_workspaces()?;
         if self.workspaces.is_empty() {
-            debug!("ワークスペースが見つかりませんでした");
+            debug!("No workspaces found");
             self.selected_index = 0;
         } else {
-            debug!(
-                "{}件のワークスペースを読み込みました",
-                self.workspaces.len()
-            );
+            debug!("Loaded {} workspaces", self.workspaces.len());
             self.selected_index = self.selected_index.min(self.workspaces.len() - 1);
         }
         Ok(())
@@ -76,7 +73,7 @@ impl App {
 
     pub fn remove_workspace(&mut self, workspace_name: &str) {
         self.workspaces.retain(|w| w.name != workspace_name);
-        // 選択インデックスの調整
+        // Adjust selection index
         if self.selected_index >= self.workspaces.len() && !self.workspaces.is_empty() {
             self.selected_index = self.workspaces.len() - 1;
         } else if self.workspaces.is_empty() {
@@ -116,7 +113,7 @@ mod tests {
     fn test_app_navigation_empty() {
         let mut app = App::new();
 
-        // 空の状態では何も変化しない
+        // No change in empty state
         app.next();
         assert_eq!(app.selected_index, 0);
 
@@ -140,19 +137,19 @@ mod tests {
             },
         ];
 
-        // 下移動
+        // Move down
         app.next();
         assert_eq!(app.selected_index, 1);
 
-        // 最後から次は最初へ
+        // From last to first
         app.next();
         assert_eq!(app.selected_index, 0);
 
-        // 上移動
+        // Move up
         app.previous();
         assert_eq!(app.selected_index, 1);
 
-        // 最初から前は最後へ
+        // From first to last
         app.previous();
         assert_eq!(app.selected_index, 0);
     }
@@ -215,13 +212,13 @@ mod tests {
             },
         ];
 
-        // 最初のワークスペースを削除
+        // Remove first workspace
         app.remove_workspace("workspace1");
         assert_eq!(app.workspaces.len(), 1);
         assert_eq!(app.workspaces[0].name, "workspace2");
         assert_eq!(app.selected_index, 0);
 
-        // 残りのワークスペースを削除
+        // Remove remaining workspace
         app.remove_workspace("workspace2");
         assert_eq!(app.workspaces.len(), 0);
         assert_eq!(app.selected_index, 0);
@@ -243,11 +240,11 @@ mod tests {
             },
         ];
 
-        // 2番目を選択してから1番目を削除
+        // Select second item then remove first
         app.selected_index = 1;
         app.remove_workspace("workspace1");
         assert_eq!(app.workspaces.len(), 1);
-        assert_eq!(app.selected_index, 0); // インデックスが調整される
+        assert_eq!(app.selected_index, 0); // Index is adjusted
     }
 
     #[test]

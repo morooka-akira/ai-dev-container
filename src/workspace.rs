@@ -28,12 +28,12 @@ pub struct WorkspaceDetails {
 
 impl WorkspaceManager {
     pub fn new() -> GworkResult<Self> {
-        debug!("WorkspaceManagerを初期化します");
+        debug!("Initializing WorkspaceManager");
         let repo = Repository::open(".").map_err(|e| {
-            error!("Gitリポジトリのオープンに失敗しました: {}", e);
-            GworkError::git(format!("Gitリポジトリが見つかりません: {}", e))
+            error!("Failed to open Git repository: {}", e);
+            GworkError::git(format!("Git repository not found: {e}"))
         })?;
-        debug!("Gitリポジトリを正常にオープンしました");
+        debug!("Git repository opened successfully");
         Ok(Self { repo })
     }
 
@@ -46,99 +46,95 @@ impl WorkspaceManager {
         pre_commands: &[String],
     ) -> GworkResult<WorkspaceInfo> {
         let timestamp = crate::utils::generate_timestamp();
-        let workspace_name = format!("{}-{}", timestamp, task_name);
+        let workspace_name = format!("{timestamp}-{task_name}");
         let branch_name = if branch_prefix.is_empty() {
             workspace_name.clone()
         } else {
             format!("{}{}", branch_prefix, workspace_name.clone())
         };
-        let workspace_path = format!("{}/{}", base_dir, workspace_name);
+        let workspace_path = format!("{base_dir}/{workspace_name}");
 
-        debug!("ワークスペースを作成します: {}", workspace_name);
-        debug!("ワークスペースパス: {}", workspace_path);
-        debug!("ブランチ名: {}", branch_name);
+        debug!("Creating workspace: {}", workspace_name);
+        debug!("Workspace path: {}", workspace_path);
+        debug!("Branch name: {}", branch_name);
 
         println!("🚀 Creating workspace:");
-        println!("  Name: {}", workspace_name);
-        println!("  Path: {}", workspace_path);
-        println!("  Branch: {}", branch_name);
+        println!("  Name: {workspace_name}");
+        println!("  Path: {workspace_path}");
+        println!("  Branch: {branch_name}");
 
-        // ベースディレクトリの作成
+        // Create base directory
         if let Some(parent) = Path::new(&workspace_path).parent() {
-            debug!("ベースディレクトリを作成します: {}", parent.display());
+            debug!("Creating base directory: {}", parent.display());
             fs::create_dir_all(parent).map_err(|e| {
-                error!(
-                    "ディレクトリ作成に失敗しました: {} - {}",
-                    parent.display(),
-                    e
-                );
-                GworkError::io(format!("ディレクトリ作成エラー: {}", e))
+                error!("Failed to create directory: {} - {}", parent.display(), e);
+                GworkError::io(format!("Directory creation error: {e}"))
             })?;
         }
 
-        // Worktreeの作成
-        debug!("Worktreeを作成します");
+        // Create worktree
+        debug!("Creating worktree");
         let opts = WorktreeAddOptions::new();
         self.repo
             .worktree(&workspace_name, Path::new(&workspace_path), Some(&opts))
             .map_err(|e| {
-                error!("Worktree作成に失敗しました: {}", e);
-                GworkError::git(format!("Worktree作成エラー: {}", e))
+                error!("Failed to create worktree: {}", e);
+                GworkError::git(format!("Worktree creation error: {e}"))
             })?;
 
-        // ブランチの作成と切り替え
-        debug!("作成されたワークスペースを開きます");
+        // Create and switch to branch
+        debug!("Opening created workspace");
         let worktree_repo = Repository::open(&workspace_path).map_err(|e| {
-            error!("作成されたワークスペースのオープンに失敗しました: {}", e);
-            GworkError::git(format!("作成されたワークスペースのオープンエラー: {}", e))
+            error!("Failed to open created workspace: {}", e);
+            GworkError::git(format!("Created workspace open error: {e}"))
         })?;
 
-        debug!("HEADコミットを取得します");
+        debug!("Getting HEAD commit");
         let head = worktree_repo.head().map_err(|e| {
-            error!("HEADの取得に失敗しました: {}", e);
-            GworkError::git(format!("HEADの取得エラー: {}", e))
+            error!("Failed to get HEAD: {}", e);
+            GworkError::git(format!("HEAD retrieval error: {e}"))
         })?;
 
         let target_commit = head.target().ok_or_else(|| {
-            error!("HEADのコミットIDが取得できません");
-            GworkError::git("HEADのコミットIDが取得できません".to_string())
+            error!("Cannot get HEAD commit ID");
+            GworkError::git("Cannot get HEAD commit ID".to_string())
         })?;
 
         let commit = worktree_repo.find_commit(target_commit).map_err(|e| {
-            error!("コミットの取得に失敗しました: {}", e);
-            GworkError::git(format!("コミットの取得エラー: {}", e))
+            error!("Failed to get commit: {}", e);
+            GworkError::git(format!("Commit retrieval error: {e}"))
         })?;
 
-        debug!("ブランチを作成します: {}", branch_name);
+        debug!("Creating branch: {}", branch_name);
         let _branch = worktree_repo
             .branch(&branch_name, &commit, false)
             .map_err(|e| {
-                error!("ブランチ作成に失敗しました: {} - {}", branch_name, e);
-                GworkError::git(format!("ブランチ作成エラー: {}", e))
+                error!("Failed to create branch: {} - {}", branch_name, e);
+                GworkError::git(format!("Branch creation error: {e}"))
             })?;
 
-        debug!("ブランチに切り替えます: {}", branch_name);
+        debug!("Switching to branch: {}", branch_name);
         worktree_repo
-            .set_head(&format!("refs/heads/{}", branch_name))
+            .set_head(&format!("refs/heads/{branch_name}"))
             .map_err(|e| {
-                error!("ブランチ切り替えに失敗しました: {} - {}", branch_name, e);
-                GworkError::git(format!("ブランチ切り替えエラー: {}", e))
+                error!("Failed to switch branch: {} - {}", branch_name, e);
+                GworkError::git(format!("Branch switching error: {e}"))
             })?;
 
-        // ファイルコピー処理
+        // File copy processing
         if !copy_files.is_empty() {
             println!("\n📄 Copying files...");
             self.copy_files(Path::new("."), Path::new(&workspace_path), copy_files);
         }
 
-        // 事前コマンド実行処理
+        // Pre-command execution processing
         if !pre_commands.is_empty() {
             println!("\n⚡ Executing pre-commands...");
             self.execute_pre_commands(Path::new(&workspace_path), pre_commands);
         }
 
         println!("\nTo enter the workspace:");
-        println!("  cd {}", workspace_path);
+        println!("  cd {workspace_path}");
 
         Ok(WorkspaceInfo {
             name: workspace_name,
@@ -152,29 +148,33 @@ impl WorkspaceManager {
             let source_path = source_repo_path.join(file_path);
             let dest_path = workspace_path.join(file_path);
 
-            // ソースファイルが存在しない場合はスキップ
+            // Skip if source file doesn't exist
             if !source_path.exists() {
-                println!("  ⚠️  ファイルが見つかりません: {} (スキップ)", file_path);
+                println!("  ⚠️  File not found: {file_path} (skipped)");
                 continue;
             }
 
-            // デスティネーションディレクトリの作成
+            // Create destination directory
             if let Some(parent) = dest_path.parent() {
                 if !parent.exists() {
                     if let Err(e) = fs::create_dir_all(parent) {
-                        println!("  ❌ ディレクトリ作成エラー: {} - {}", parent.display(), e);
+                        println!(
+                            "  ❌ Directory creation error: {} - {}",
+                            parent.display(),
+                            e
+                        );
                         continue;
                     }
                 }
             }
 
-            // ファイルをコピー
+            // Copy file
             match fs::copy(&source_path, &dest_path) {
                 Ok(_) => {
-                    println!("  ✅ コピー完了: {}", file_path);
+                    println!("  ✅ Copy completed: {file_path}");
                 }
                 Err(e) => {
-                    println!("  ❌ コピーエラー: {} - {}", file_path, e);
+                    println!("  ❌ Copy error: {file_path} - {e}");
                 }
             }
         }
@@ -204,37 +204,37 @@ impl WorkspaceManager {
             match output {
                 Ok(result) => {
                     if result.status.success() {
-                        // 標準出力がある場合は表示
+                        // Show stdout if available
                         if !result.stdout.is_empty() {
                             let stdout = String::from_utf8_lossy(&result.stdout);
-                            println!("     出力: {}", stdout.trim());
+                            println!("     Output: {}", stdout.trim());
                         }
                     } else {
                         println!(
-                            "  ❌ コマンド実行失敗: {} (終了コード: {:?})",
+                            "  ❌ Command execution failed: {} (exit code: {:?})",
                             command,
                             result.status.code()
                         );
 
-                        // エラー出力がある場合は表示
+                        // Show stderr if available
                         if !result.stderr.is_empty() {
                             let stderr = String::from_utf8_lossy(&result.stderr);
-                            println!("     エラー: {}", stderr.trim());
+                            println!("     Error: {}", stderr.trim());
                         }
                     }
                 }
                 Err(e) => {
-                    println!("  ❌ コマンド実行エラー: {} - {}", command, e);
+                    println!("  ❌ Command execution error: {command} - {e}");
                 }
             }
         }
     }
 
     pub fn list_workspaces(&self) -> GworkResult<Vec<WorkspaceInfo>> {
-        debug!("ワークスペース一覧を取得します");
+        debug!("Getting workspace list");
         let worktrees = self.repo.worktrees().map_err(|e| {
-            error!("Worktree一覧取得に失敗しました: {}", e);
-            GworkError::git(format!("Worktree一覧取得エラー: {}", e))
+            error!("Failed to get worktree list: {}", e);
+            GworkError::git(format!("Worktree list retrieval error: {e}"))
         })?;
 
         let mut workspace_list = Vec::new();
@@ -242,24 +242,24 @@ impl WorkspaceManager {
         for worktree_name in worktrees.iter().flatten() {
             if let Ok(worktree) = self.repo.find_worktree(worktree_name) {
                 if let Some(path) = worktree.path().to_str() {
-                    // ワークスペースが実際に存在するかチェック
+                    // Check if workspace actually exists
                     if !Path::new(path).exists() {
                         continue;
                     }
 
-                    // ワークスペースのリポジトリを開いて現在のブランチ名を取得
+                    // Open workspace repository and get current branch name
                     let branch_name = match Repository::open(path) {
                         Ok(workspace_repo) => match workspace_repo.head() {
                             Ok(head_ref) => {
                                 if let Some(name) = head_ref.shorthand() {
                                     name.to_string()
                                 } else {
-                                    format!("work/{}", worktree_name)
+                                    format!("work/{worktree_name}")
                                 }
                             }
-                            Err(_) => format!("work/{}", worktree_name),
+                            Err(_) => format!("work/{worktree_name}"),
                         },
-                        Err(_) => format!("work/{}", worktree_name),
+                        Err(_) => format!("work/{worktree_name}"),
                     };
 
                     workspace_list.push(WorkspaceInfo {
@@ -271,7 +271,7 @@ impl WorkspaceManager {
             }
         }
 
-        // メインワークツリーは除外（一般的に「main」ブランチの作業ディレクトリ）
+        // Exclude main worktree (typically the main branch working directory)
         workspace_list.retain(|ws| ws.name != "main" && !ws.path.ends_with("/.git"));
 
         Ok(workspace_list)
@@ -279,30 +279,30 @@ impl WorkspaceManager {
 
     #[allow(dead_code)]
     pub fn remove_workspace(&self, workspace_name: &str) -> GworkResult<()> {
-        debug!("ワークスペースを削除します: {}", workspace_name);
-        // まずワークスペースに関連するブランチ名を特定
+        debug!("Deleting workspace: {}", workspace_name);
+        // First identify branch name associated with workspace
         let mut branch_to_delete = None;
 
-        // ワークスペース一覧からブランチ名を取得
-        debug!("削除対象のワークスペース情報を取得します");
+        // Get branch name from workspace list
+        debug!("Getting target workspace information for deletion");
         if let Ok(workspaces) = self.list_workspaces() {
             for workspace in workspaces {
                 if workspace.name == workspace_name {
-                    debug!("削除対象ブランチ: {}", workspace.branch.clone());
+                    debug!("Target branch for deletion: {}", workspace.branch.clone());
                     branch_to_delete = Some(workspace.branch.clone());
                     break;
                 }
             }
         }
 
-        // git worktree removeコマンドを使用してワークスペースを削除
-        debug!("git worktreeコマンドでワークスペースを削除します");
+        // Delete workspace using git worktree remove command
+        debug!("Deleting workspace with git worktree command");
         let output = std::process::Command::new("git")
             .args(["worktree", "remove", "--force", workspace_name])
             .output()
             .map_err(|e| {
                 error!("git worktree removeコマンド実行に失敗しました: {}", e);
-                GworkError::git(format!("git worktree removeコマンド実行エラー: {}", e))
+                GworkError::git(format!("git worktree removeコマンド実行エラー: {e}"))
             })?;
 
         let worktree_removed = output.status.success();
@@ -342,7 +342,7 @@ impl WorkspaceManager {
                 .output()
                 .map_err(|e| {
                     error!("git worktree removeコマンド実行に失敗しました: {}", e);
-                    GworkError::git(format!("git worktree removeコマンド実行エラー: {}", e))
+                    GworkError::git(format!("git worktree removeコマンド実行エラー: {e}"))
                 })?;
 
             if output.status.success() {
@@ -380,8 +380,7 @@ impl WorkspaceManager {
         } else {
             error!("ワークスペースの削除に失敗しました: {}", workspace_name);
             Err(GworkError::workspace(format!(
-                "ワークスペースが見つかりません: {}",
-                workspace_name
+                "ワークスペースが見つかりません: {workspace_name}"
             )))
         }
     }
@@ -469,13 +468,13 @@ impl WorkspaceManager {
                         }
 
                         let status_text = if modified_count > 0 {
-                            format!("Modified ({} files)", modified_count)
+                            format!("Modified ({modified_count} files)")
                         } else {
                             "Clean".to_string()
                         };
 
                         let files_text =
-                            format!("{} tracked, {} untracked", tracked_count, untracked_count);
+                            format!("{tracked_count} tracked, {untracked_count} untracked");
                         (status_text, files_text)
                     }
                     Err(_) => ("不明".to_string(), "不明".to_string()),
@@ -497,7 +496,7 @@ impl WorkspaceManager {
             match Self::calculate_directory_size(workspace_path) {
                 Ok(size_bytes) => {
                     if size_bytes < 1024 {
-                        format!("{} B", size_bytes)
+                        format!("{size_bytes} B")
                     } else if size_bytes < 1024 * 1024 {
                         format!("{:.1} KB", size_bytes as f64 / 1024.0)
                     } else {
@@ -526,7 +525,7 @@ impl WorkspaceManager {
                                         let short_message = if message.chars().count() > 50 {
                                             let truncated: String =
                                                 message.chars().take(47).collect();
-                                            format!("{}...", truncated)
+                                            format!("{truncated}...")
                                         } else {
                                             message.to_string()
                                         };
@@ -544,7 +543,7 @@ impl WorkspaceManager {
                                             format!("{}日前", diff / 86400)
                                         };
 
-                                        commits.push(format!("- {} ({})", short_message, time_ago));
+                                        commits.push(format!("- {short_message} ({time_ago})"));
                                     }
                                 }
                             }
@@ -605,7 +604,7 @@ mod tests {
     fn generate_test_workspace_name(prefix: &str) -> String {
         let counter = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
         let timestamp = crate::utils::generate_timestamp();
-        format!("{}-test-{}-{}", timestamp, counter, prefix)
+        format!("{timestamp}-test-{counter}-{prefix}")
     }
 
     // テスト完了時にワークスペースをクリーンアップ
@@ -704,9 +703,9 @@ mod tests {
             let _base_dir = "../test-workspaces";
             let branch_prefix = "test/";
 
-            let workspace_name = format!("{}-{}", timestamp, task_name);
-            let branch_name = format!("{}{}", branch_prefix, task_name);
-            let workspace_path = format!("{}/{}", _base_dir, workspace_name);
+            let workspace_name = format!("{timestamp}-{task_name}");
+            let branch_name = format!("{branch_prefix}{task_name}");
+            let workspace_path = format!("{_base_dir}/{workspace_name}");
 
             assert!(workspace_name.contains("test-task"));
             assert!(workspace_path.contains("../test-workspaces"));
@@ -728,13 +727,12 @@ mod tests {
             for task_name in test_cases {
                 // テスト環境では実際の作成は行わず、パラメータ生成をテスト
                 let timestamp = crate::utils::generate_timestamp();
-                let workspace_name = format!("{}-{}", timestamp, task_name);
-                let branch_name = format!("test/{}", task_name);
+                let workspace_name = format!("{timestamp}-{task_name}");
+                let branch_name = format!("test/{task_name}");
 
                 assert!(
                     workspace_name.contains(task_name),
-                    "Failed for task name: {}",
-                    task_name
+                    "Failed for task name: {task_name}"
                 );
                 assert!(branch_name.contains(task_name));
             }
@@ -751,8 +749,8 @@ mod tests {
             let _base_dir = "../test-workspaces";
             let branch_prefix = "test/";
 
-            let workspace_name = format!("{}-{}", timestamp, task_name);
-            let branch_name = format!("{}{}", branch_prefix, task_name);
+            let workspace_name = format!("{timestamp}-{task_name}");
+            let branch_name = format!("{branch_prefix}{task_name}");
 
             // 空の名前でも構造は正しく生成される
             assert!(workspace_name.ends_with("-"));
@@ -789,7 +787,7 @@ mod tests {
             let tasks = vec!["task1", "task2", "task3"];
             for task in tasks {
                 let timestamp = crate::utils::generate_timestamp();
-                let workspace_name = format!("{}-{}", timestamp, task);
+                let workspace_name = format!("{timestamp}-{task}");
                 assert!(workspace_name.contains(task));
             }
         }
@@ -802,7 +800,7 @@ mod tests {
             path: "/path".to_string(),
             branch: "branch".to_string(),
         };
-        let debug_str = format!("{:?}", info);
+        let debug_str = format!("{info:?}");
         assert!(debug_str.contains("WorkspaceInfo"));
         assert!(debug_str.contains("test"));
         assert!(debug_str.contains("/path"));
@@ -878,7 +876,7 @@ mod tests {
             // テスト環境ではタイムスタンプ生成をテスト
             let timestamp = crate::utils::generate_timestamp();
             let task_name = "timestamp-test";
-            let workspace_name = format!("{}-{}", timestamp, task_name);
+            let workspace_name = format!("{timestamp}-{task_name}");
 
             // タイムスタンプの形式をチェック (YYYYMMDD-HHMMSS-task-name)
             let parts: Vec<&str> = workspace_name.split('-').collect();
@@ -957,11 +955,9 @@ mod tests {
             assert!(result.is_err());
 
             if let Err(error_msg) = result {
-                assert!(
-                    error_msg
-                        .to_string()
-                        .contains("ワークスペースが見つかりません")
-                );
+                assert!(error_msg
+                    .to_string()
+                    .contains("ワークスペースが見つかりません"));
             }
         }
     }
@@ -1201,11 +1197,9 @@ mod tests {
             assert!(details.status.contains("ワークスペースが存在しません"));
             assert!(details.files_info.contains("不明"));
             assert!(details.size.contains("不明"));
-            assert!(
-                details
-                    .recent_commits
-                    .contains(&"ワークスペースが存在しません".to_string())
-            );
+            assert!(details
+                .recent_commits
+                .contains(&"ワークスペースが存在しません".to_string()));
         }
     }
 }

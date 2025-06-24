@@ -1,10 +1,10 @@
 use crate::tui::App;
 use ratatui::{
-    Frame,
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
+    Frame,
 };
 
 pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::WorkspaceManager) {
@@ -23,21 +23,21 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("ワークスペース管理"),
+                .title("Workspace Management"),
         );
     f.render_widget(header, chunks[0]);
 
     // Help text
     let help_text = if app.is_in_delete_confirmation() {
-        Paragraph::new("Y: 削除確定  N: キャンセル  Esc: キャンセル")
+        Paragraph::new("Y: Confirm deletion  N: Cancel  Esc: Cancel")
             .style(Style::default().fg(Color::Red))
             .block(Block::default().borders(Borders::ALL))
     } else if app.is_in_details_view() {
-        Paragraph::new("任意のキーを押して閉じる")
+        Paragraph::new("Press any key to close")
             .style(Style::default().fg(Color::Cyan))
             .block(Block::default().borders(Borders::ALL))
     } else {
-        Paragraph::new("↑/↓: 選択  Enter: 開く  d: 削除  i: 詳細  q: 終了")
+        Paragraph::new("↑/↓: Select  Enter: Open  d: Delete  i: Details  q: Quit")
             .style(Style::default().fg(Color::Gray))
             .block(Block::default().borders(Borders::ALL))
     };
@@ -54,9 +54,15 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
 
     // Workspace list
     if app.workspaces.is_empty() {
-        let empty_msg = Paragraph::new("ワークスペースが見つかりません。\n\n'gwork start <task-name>' でワークスペースを作成してください。")
-            .style(Style::default().fg(Color::Yellow))
-            .block(Block::default().borders(Borders::ALL).title("ワークスペース一覧"));
+        let empty_msg = Paragraph::new(
+            "No workspaces found.\n\nCreate a workspace with 'gwork start <task-name>'.",
+        )
+        .style(Style::default().fg(Color::Yellow))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Workspace List"),
+        );
         f.render_widget(empty_msg, content_layout[1]);
     } else {
         let items: Vec<ListItem> = app
@@ -88,7 +94,7 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title(format!("ワークスペース一覧 ({} 件)", app.workspaces.len())),
+                    .title(format!("Workspace List ({} items)", app.workspaces.len())),
             )
             .highlight_style(Style::default().add_modifier(Modifier::BOLD))
             .highlight_symbol("→ ");
@@ -99,14 +105,14 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
         f.render_stateful_widget(list, content_layout[1], &mut list_state);
     }
 
-    // 詳細情報ダイアログ
+    // Details dialog
     if app.is_in_details_view() {
         if let Some(workspace) = app.get_selected_workspace() {
             draw_workspace_details_dialog(f, workspace, workspace_manager);
         }
     }
 
-    // 削除確認ダイアログ
+    // Delete confirmation dialog
     if app.is_in_delete_confirmation() {
         if let Some(workspace) = app.get_selected_workspace() {
             draw_delete_confirmation_dialog(f, &workspace.name, &workspace.path);
@@ -115,7 +121,7 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
 }
 
 fn draw_delete_confirmation_dialog(f: &mut Frame, workspace_name: &str, workspace_path: &str) {
-    // 画面中央にモーダルダイアログを表示
+    // Display modal dialog in the center of the screen
     let area = f.area();
     let popup_width = 60.min(area.width);
     let popup_height = 8.min(area.height);
@@ -127,7 +133,7 @@ fn draw_delete_confirmation_dialog(f: &mut Frame, workspace_name: &str, workspac
         height: popup_height,
     };
 
-    // 背景をクリア
+    // Clear background
     f.render_widget(
         Block::default()
             .style(Style::default().bg(Color::Black))
@@ -136,37 +142,34 @@ fn draw_delete_confirmation_dialog(f: &mut Frame, workspace_name: &str, workspac
         popup_area,
     );
 
-    // ダイアログ内容
+    // Dialog content
     let dialog_layout = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
         .constraints([
-            Constraint::Length(1), // タイトル
-            Constraint::Length(2), // ワークスペース情報
-            Constraint::Length(1), // 確認メッセージ
-            Constraint::Length(1), // 操作ガイド
+            Constraint::Length(1), // Title
+            Constraint::Length(2), // Workspace information
+            Constraint::Length(1), // Confirmation message
+            Constraint::Length(1), // Operation guide
         ])
         .split(popup_area);
 
-    // タイトル
-    let title = Paragraph::new("ワークスペースを削除しますか？")
+    // Title
+    let title = Paragraph::new("Delete workspace?")
         .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD));
     f.render_widget(title, dialog_layout[0]);
 
-    // ワークスペース情報
-    let workspace_info = Paragraph::new(format!(
-        "名前: {}\nパス: {}",
-        workspace_name, workspace_path
-    ))
-    .style(Style::default().fg(Color::White));
+    // Workspace information
+    let workspace_info = Paragraph::new(format!("Name: {workspace_name}\nPath: {workspace_path}"))
+        .style(Style::default().fg(Color::White));
     f.render_widget(workspace_info, dialog_layout[1]);
 
-    // 確認メッセージ
-    let warning =
-        Paragraph::new("この操作は取り消せません。").style(Style::default().fg(Color::Yellow));
+    // Confirmation message
+    let warning = Paragraph::new("This operation cannot be undone.")
+        .style(Style::default().fg(Color::Yellow));
     f.render_widget(warning, dialog_layout[2]);
 
-    // 操作ガイド
+    // Operation guide
     let guide = Paragraph::new("[Y]es  [N]o").style(
         Style::default()
             .fg(Color::Cyan)
@@ -180,7 +183,7 @@ fn draw_workspace_details_dialog(
     workspace: &crate::workspace::WorkspaceInfo,
     workspace_manager: &crate::workspace::WorkspaceManager,
 ) {
-    // 画面中央にモーダルダイアログを表示
+    // Display modal dialog in the center of the screen
     let area = f.area();
     let popup_width = 80.min(area.width);
     let popup_height = 16.min(area.height);
@@ -192,7 +195,7 @@ fn draw_workspace_details_dialog(
         height: popup_height,
     };
 
-    // 背景ブロック
+    // Background block
     f.render_widget(
         Block::default()
             .style(Style::default().bg(Color::Black))
@@ -202,20 +205,20 @@ fn draw_workspace_details_dialog(
         popup_area,
     );
 
-    // ダイアログ内容のレイアウト
+    // Dialog content layout
     let dialog_layout = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
         .constraints([
-            Constraint::Length(2), // 基本情報
-            Constraint::Length(2), // 日時情報
-            Constraint::Length(2), // ステータス情報
-            Constraint::Length(4), // 最近のコミット
-            Constraint::Length(1), // 操作ガイド
+            Constraint::Length(2), // Basic information
+            Constraint::Length(2), // Date/time information
+            Constraint::Length(2), // Status information
+            Constraint::Length(4), // Recent commits
+            Constraint::Length(1), // Operation guide
         ])
         .split(popup_area);
 
-    // 基本情報
+    // Basic information
     let basic_info = Paragraph::new(format!(
         "Branch: {}\nPath: {}",
         workspace.branch, workspace.path
@@ -223,10 +226,10 @@ fn draw_workspace_details_dialog(
     .style(Style::default().fg(Color::White));
     f.render_widget(basic_info, dialog_layout[0]);
 
-    // 詳細情報を取得
+    // Get detailed information
     match workspace_manager.get_workspace_details(workspace) {
         Ok(details) => {
-            // 日時情報
+            // Date/time information
             let time_info = Paragraph::new(format!(
                 "Created: {}\nLast Modified: {}",
                 details.created, details.last_modified
@@ -234,7 +237,7 @@ fn draw_workspace_details_dialog(
             .style(Style::default().fg(Color::Gray));
             f.render_widget(time_info, dialog_layout[1]);
 
-            // ステータス情報
+            // Status information
             let status_info = Paragraph::new(format!(
                 "Status: {}\nFiles: {}  Size: {}",
                 details.status, details.files_info, details.size
@@ -242,9 +245,9 @@ fn draw_workspace_details_dialog(
             .style(Style::default().fg(Color::Green));
             f.render_widget(status_info, dialog_layout[2]);
 
-            // 最近のコミット履歴
+            // Recent commit history
             let commits_text = if details.recent_commits.is_empty() {
-                "Recent Commits:\nなし".to_string()
+                "Recent Commits:\nNone".to_string()
             } else {
                 format!("Recent Commits:\n{}", details.recent_commits.join("\n"))
             };
@@ -253,22 +256,22 @@ fn draw_workspace_details_dialog(
             f.render_widget(commit_info, dialog_layout[3]);
         }
         Err(_) => {
-            // エラーが発生した場合は代替表示
-            let time_info = Paragraph::new("Created: 取得エラー\nLast Modified: 取得エラー")
+            // Display alternative text if error occurs
+            let time_info = Paragraph::new("Created: Error\nLast Modified: Error")
                 .style(Style::default().fg(Color::Red));
             f.render_widget(time_info, dialog_layout[1]);
 
-            let status_info = Paragraph::new("Status: 取得エラー\nFiles: --  Size: --")
+            let status_info = Paragraph::new("Status: Error\nFiles: --  Size: --")
                 .style(Style::default().fg(Color::Red));
             f.render_widget(status_info, dialog_layout[2]);
 
-            let commit_info = Paragraph::new("Recent Commits:\n取得エラー")
-                .style(Style::default().fg(Color::Red));
+            let commit_info =
+                Paragraph::new("Recent Commits:\nError").style(Style::default().fg(Color::Red));
             f.render_widget(commit_info, dialog_layout[3]);
         }
     }
 
-    // 操作ガイド
+    // Operation guide
     let guide = Paragraph::new("Press any key to close").style(
         Style::default()
             .fg(Color::Cyan)

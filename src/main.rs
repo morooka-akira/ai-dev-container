@@ -15,7 +15,7 @@ use workspace::WorkspaceManager;
 fn main() {
     let cli = Cli::parse();
 
-    // TUIモードの場合はログレベルを下げる
+    // Lower log level for TUI mode
     let is_tui_mode = matches!(
         cli.command,
         Commands::List {
@@ -25,25 +25,25 @@ fn main() {
     );
     init_logging(is_tui_mode);
 
-    debug!("gwork アプリケーションを開始します");
-    debug!("コマンドライン引数を解析しました");
+    debug!("Starting gwork application");
+    debug!("Command line arguments parsed");
 
     let workspace_manager = match WorkspaceManager::new() {
         Ok(manager) => {
-            debug!("WorkspaceManagerを正常に初期化しました");
+            debug!("WorkspaceManager initialized successfully");
             manager
         }
         Err(e) => {
-            error!("WorkspaceManagerの初期化に失敗しました: {}", e);
-            eprintln!("エラー: {}", e);
+            error!("Failed to initialize WorkspaceManager: {}", e);
+            eprintln!("Error: {e}");
             std::process::exit(1);
         }
     };
 
     let result = match cli.command {
         Commands::Start { task_name, config } => {
-            debug!("ワークスペース作成を開始します: {}", task_name);
-            debug!("使用する設定ファイル: {}", config);
+            debug!("Starting workspace creation: {}", task_name);
+            debug!("Using configuration file: {}", config);
 
             let config = load_config_from_path(&config);
 
@@ -55,12 +55,12 @@ fn main() {
                 &config.workspace.pre_commands,
             ) {
                 Ok(info) => {
-                    debug!("ワークスペース作成が完了しました: {}", info.name);
+                    debug!("Workspace creation completed: {}", info.name);
                     Ok(())
                 }
                 Err(e) => {
-                    error!("ワークスペース作成に失敗しました: {}", e);
-                    eprintln!("❌ エラー: {}", e);
+                    error!("Failed to create workspace: {}", e);
+                    eprintln!("❌ Error: {e}");
                     Err(e)
                 }
             }
@@ -69,80 +69,80 @@ fn main() {
             config,
             print_path_only,
         } => {
-            debug!("ワークスペース一覧表示を開始します");
-            debug!("使用する設定ファイル: {}", config);
+            debug!("Starting workspace list display");
+            debug!("Using configuration file: {}", config);
 
             let _config = load_config_from_path(&config);
 
             if print_path_only {
-                debug!("--print-path-onlyモードを実行します");
-                // --print-path-onlyモード: 全ワークスペースのパス一覧を出力
+                debug!("Executing --path-only mode");
+                // --path-only mode: output list of all workspace paths
                 match workspace_manager.list_workspaces() {
                     Ok(workspaces) => {
-                        debug!("ワークスペース一覧を取得しました: {} 件", workspaces.len());
+                        debug!("Retrieved workspace list: {} items", workspaces.len());
                         for workspace in workspaces {
                             println!("{}", workspace.path);
                         }
                         Ok(())
                     }
                     Err(e) => {
-                        error!("ワークスペース一覧の取得に失敗しました: {}", e);
+                        error!("Failed to retrieve workspace list: {}", e);
                         Err(e)
                     }
                 }
             } else {
-                // 通常のTUIモード
-                debug!("TUIモードを開始します");
-                debug!("TUIを初期化します");
+                // Normal TUI mode
+                debug!("Starting TUI mode");
+                debug!("Initializing TUI");
 
                 match run_tui() {
                     Ok(Some(selected_path)) => {
-                        debug!("TUIで選択されたパス: {}", selected_path);
-                        // Enterキーで選択されたワークスペースのパスを出力
-                        // シェル関数がこのパスを受け取ってcdを実行する
-                        println!("{}", selected_path);
+                        debug!("Path selected in TUI: {}", selected_path);
+                        // Output path of workspace selected with Enter key
+                        // Shell function receives this path and executes cd
+                        println!("{selected_path}");
                         Ok(())
                     }
                     Ok(None) => {
-                        debug!("TUIが正常終了しました（パス選択なし）");
-                        // 何も選択せずに終了
+                        debug!("TUI exited normally (no path selected)");
+                        // Exit without selecting anything
                         Ok(())
                     }
                     Err(e) => {
-                        error!("TUIエラーが発生しました: {}", e);
-                        eprintln!("TUIエラー: {}", e);
-                        Err(GworkError::tui(format!("TUIエラー: {}", e)))
+                        error!("TUI error occurred: {}", e);
+                        eprintln!("TUI error: {e}");
+                        Err(GworkError::tui(format!("TUI error: {e}")))
                     }
                 }
             }
         }
     };
 
-    // 最終的なエラーハンドリング
+    // Final error handling
     if let Err(e) = result {
-        error!("アプリケーションでエラーが発生しました: {}", e);
-        eprintln!("❌ {}", e);
+        error!("Application error occurred: {}", e);
+        eprintln!("❌ {e}");
         std::process::exit(1);
     }
 
-    debug!("gwork アプリケーションを正常終了します");
+    debug!("Exiting gwork application normally");
 }
 
-/// ログの初期化
+/// Initialize logging
 fn init_logging(is_tui_mode: bool) {
     use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-    // 環境変数 RUST_LOG でログレベルを設定可能にする
-    // デバッグビルドとリリースビルドで異なるデフォルトレベル
+    // Allow setting log level via RUST_LOG environment variable
+    // Different default levels for debug and release builds
     let default_level = if cfg!(debug_assertions) {
-        // デバッグビルド
+        // Debug build
         if is_tui_mode {
             "gwork=warn"
         } else {
             "gwork=info"
         }
     } else {
-        // リリースビルド：エラーのみ表示
+        // Release build: show errors only
         "gwork=error"
     };
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
@@ -152,11 +152,11 @@ fn init_logging(is_tui_mode: bool) {
         .with(env_filter)
         .with(
             tracing_subscriber::fmt::layer()
-                .with_writer(std::io::stderr) // 標準エラー出力にログを出力
-                .with_target(false) // ターゲット（モジュール名）を表示しない
-                .with_thread_ids(false) // スレッドIDを表示しない
-                .with_file(false) // ファイル名を表示しない
-                .with_line_number(false), // 行番号を表示しない
+                .with_writer(std::io::stderr) // Output logs to stderr
+                .with_target(false) // Don't show target (module name)
+                .with_thread_ids(false) // Don't show thread IDs
+                .with_file(false) // Don't show file names
+                .with_line_number(false), // Don't show line numbers
         )
         .init();
 }
@@ -165,9 +165,9 @@ fn run_tui() -> std::io::Result<Option<String>> {
     use crossterm::{
         event::{DisableMouseCapture, EnableMouseCapture},
         execute,
-        terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     };
-    use ratatui::{Terminal, backend::CrosstermBackend};
+    use ratatui::{backend::CrosstermBackend, Terminal};
     use std::io;
 
     // Terminal setup
@@ -191,14 +191,14 @@ fn run_tui() -> std::io::Result<Option<String>> {
                 LeaveAlternateScreen,
                 DisableMouseCapture
             )?;
-            eprintln!("ワークスペース管理の初期化エラー: {}", e);
+            eprintln!("Workspace management initialization error: {e}");
             return Ok(None);
         }
     };
 
     if let Err(e) = app.load_workspaces(&workspace_manager) {
         // Show error but continue with empty list
-        eprintln!("ワークスペース読み込み警告: {}", e);
+        eprintln!("Workspace loading warning: {e}");
     }
 
     // Main loop
@@ -209,15 +209,15 @@ fn run_tui() -> std::io::Result<Option<String>> {
             tui::events::AppAction::Quit => break None,
             tui::events::AppAction::NavigateToWorkspace(path) => break Some(path),
             tui::events::AppAction::DeleteWorkspace(workspace_name) => {
-                // ワークスペースを削除
+                // Delete workspace
                 match workspace_manager.remove_workspace(&workspace_name) {
                     Ok(()) => {
-                        // アプリの状態からも削除
+                        // Also remove from app state
                         app.remove_workspace(&workspace_name);
                     }
                     Err(e) => {
-                        eprintln!("削除エラー: {}", e);
-                        // エラーが発生してもアプリ状態は更新（表示と実際の状態の同期）
+                        eprintln!("Deletion error: {e}");
+                        // Update app state even if error occurs (sync display with actual state)
                         app.remove_workspace(&workspace_name);
                     }
                 }

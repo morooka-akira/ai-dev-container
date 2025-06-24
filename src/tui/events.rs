@@ -6,8 +6,8 @@ use std::time::Duration;
 pub enum AppAction {
     None,
     Quit,
-    NavigateToWorkspace(String), // パスを返す
-    DeleteWorkspace(String),     // 削除するワークスペース名
+    NavigateToWorkspace(String), // Return path
+    DeleteWorkspace(String),     // Workspace name to delete
 }
 
 pub fn handle_events(app: &mut App) -> std::io::Result<AppAction> {
@@ -40,10 +40,10 @@ pub fn handle_events(app: &mut App) -> std::io::Result<AppAction> {
                 }
                 KeyCode::Enter => {
                     if app.is_in_delete_confirmation() {
-                        // 削除確認ダイアログでのEnterキー処理
+                        // Enter key handling in delete confirmation dialog
                         Ok(AppAction::None)
                     } else if app.is_in_details_view() {
-                        // 詳細ダイアログでのEnterキー処理（閉じる）
+                        // Enter key handling in details dialog (close)
                         app.hide_details();
                         Ok(AppAction::None)
                     } else if let Some(workspace) = app.get_selected_workspace() {
@@ -90,7 +90,7 @@ pub fn handle_events(app: &mut App) -> std::io::Result<AppAction> {
                     Ok(AppAction::None)
                 }
                 _ => {
-                    // 詳細ダイアログ表示中は任意のキーで閉じる
+                    // Close details dialog with any key
                     if app.is_in_details_view() {
                         app.hide_details();
                     }
@@ -110,7 +110,7 @@ mod tests {
     use super::*;
     use crate::workspace::WorkspaceInfo;
 
-    // AppActionのテスト用ヘルパー関数
+    // Helper function for AppAction testing
     fn create_test_app_with_workspaces() -> App {
         let mut app = App::new();
         app.workspaces = vec![
@@ -156,17 +156,17 @@ mod tests {
     #[test]
     fn test_app_action_debug() {
         let action = AppAction::NavigateToWorkspace("/test/path".to_string());
-        let debug_str = format!("{:?}", action);
+        let debug_str = format!("{action:?}");
         assert!(debug_str.contains("NavigateToWorkspace"));
         assert!(debug_str.contains("/test/path"));
     }
 
-    // 模擬的なKeyCode処理テスト（実際のキーイベントは発生させずにロジックをテスト）
+    // Mock KeyCode processing test (test logic without generating actual key events)
     #[test]
     fn test_enter_key_action_with_selected_workspace() {
         let app = create_test_app_with_workspaces();
 
-        // Enterキーが押された時の想定される動作をテスト
+        // Test expected behavior when Enter key is pressed
         if let Some(workspace) = app.get_selected_workspace() {
             let expected_action = AppAction::NavigateToWorkspace(workspace.path.clone());
             assert_eq!(
@@ -178,18 +178,18 @@ mod tests {
 
     #[test]
     fn test_enter_key_action_with_empty_workspaces() {
-        let app = App::new(); // 空のワークスペース
+        let app = App::new(); // Empty workspace
 
-        // Enterキーが押された時、選択されたワークスペースがない場合
+        // When Enter key is pressed with no selected workspace
         assert!(app.get_selected_workspace().is_none());
-        // この場合はAppAction::Noneが返されるべき
+        // AppAction::None should be returned in this case
     }
 
     #[test]
     fn test_quit_action() {
         let mut app = create_test_app_with_workspaces();
 
-        // qキーによる終了処理の検証
+        // Verify quit processing with q key
         app.quit();
         assert!(app.should_quit);
     }
@@ -198,14 +198,14 @@ mod tests {
     fn test_navigation_actions() {
         let mut app = create_test_app_with_workspaces();
 
-        // 初期状態は0番目が選択されている
+        // Initially, item 0 is selected
         assert_eq!(app.selected_index, 0);
 
-        // 下方向キーのテスト
+        // Test down key
         app.next();
         assert_eq!(app.selected_index, 1);
 
-        // 上方向キーのテスト
+        // Test up key
         app.previous();
         assert_eq!(app.selected_index, 0);
     }
@@ -214,16 +214,16 @@ mod tests {
     fn test_delete_confirmation_flow() {
         let mut app = create_test_app_with_workspaces();
 
-        // 削除確認ダイアログの表示
+        // Display delete confirmation dialog
         assert!(!app.is_in_delete_confirmation());
         app.show_delete_confirmation();
         assert!(app.is_in_delete_confirmation());
 
-        // 削除確認中のナビゲーション制御をアプリロジックで確認
-        // （実際のキーイベントの無効化はevents.rsのhandle_eventsで実装されている）
+        // Verify navigation control during delete confirmation with app logic
+        // (Actual key event disabling is implemented in handle_events in events.rs)
         assert!(app.is_in_delete_confirmation());
 
-        // キャンセル
+        // Cancel
         app.hide_delete_confirmation();
         assert!(!app.is_in_delete_confirmation());
     }
@@ -232,7 +232,7 @@ mod tests {
     fn test_delete_workspace_action() {
         let app = create_test_app_with_workspaces();
 
-        // 選択されたワークスペースが削除アクションで返される
+        // Selected workspace is returned as delete action
         if let Some(workspace) = app.get_selected_workspace() {
             let expected_action = AppAction::DeleteWorkspace(workspace.name.clone());
             assert_eq!(
