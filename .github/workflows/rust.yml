@@ -22,7 +22,7 @@ jobs:
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2025-06-23
+          toolchain: stable
           profile: minimal
           components: rustfmt,clippy
       - name: Check formatting

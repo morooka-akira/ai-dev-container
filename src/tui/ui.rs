@@ -1,10 +1,10 @@
 use crate::tui::App;
 use ratatui::{
-    Frame,
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
+    Frame,
 };
 
 pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::WorkspaceManager) {
@@ -106,17 +106,17 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
     }
 
     // Details dialog
-    if app.is_in_details_view()
-        && let Some(workspace) = app.get_selected_workspace()
-    {
-        draw_workspace_details_dialog(f, workspace, workspace_manager);
+    if app.is_in_details_view() {
+        if let Some(workspace) = app.get_selected_workspace() {
+            draw_workspace_details_dialog(f, workspace, workspace_manager);
+        }
     }
 
     // Delete confirmation dialog
-    if app.is_in_delete_confirmation()
-        && let Some(workspace) = app.get_selected_workspace()
-    {
-        draw_delete_confirmation_dialog(f, &workspace.name, &workspace.path);
+    if app.is_in_delete_confirmation() {
+        if let Some(workspace) = app.get_selected_workspace() {
+            draw_delete_confirmation_dialog(f, &workspace.name, &workspace.path);
+        }
     }
 }
 

@@ -187,11 +187,9 @@ mod tests {
         let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "test file not found");
         let gwork_err: GworkError = io_err.into();
         assert!(matches!(gwork_err, GworkError::Io { .. }));
-        assert!(
-            gwork_err
-                .to_string()
-                .contains("File or directory not found")
-        );
+        assert!(gwork_err
+            .to_string()
+            .contains("File or directory not found"));
     }
 
     #[test]
@@ -200,11 +198,9 @@ mod tests {
         let yaml_err = serde_yaml::from_str::<serde_yaml::Value>(yaml_content).unwrap_err();
         let gwork_err: GworkError = yaml_err.into();
         assert!(matches!(gwork_err, GworkError::Config { .. }));
-        assert!(
-            gwork_err
-                .to_string()
-                .contains("Failed to parse YAML configuration file")
-        );
+        assert!(gwork_err
+            .to_string()
+            .contains("Failed to parse YAML configuration file"));
     }
 
     #[test]

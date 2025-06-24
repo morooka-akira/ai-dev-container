@@ -155,16 +155,17 @@ impl WorkspaceManager {
             }
 
             // Create destination directory
-            if let Some(parent) = dest_path.parent()
-                && !parent.exists()
-                && let Err(e) = fs::create_dir_all(parent)
-            {
-                println!(
-                    "  ❌ Directory creation error: {} - {}",
-                    parent.display(),
-                    e
-                );
-                continue;
+            if let Some(parent) = dest_path.parent() {
+                if !parent.exists() {
+                    if let Err(e) = fs::create_dir_all(parent) {
+                        println!(
+                            "  ❌ Directory creation error: {} - {}",
+                            parent.display(),
+                            e
+                        );
+                        continue;
+                    }
+                }
             }
 
             // Copy file
@@ -239,34 +240,34 @@ impl WorkspaceManager {
         let mut workspace_list = Vec::new();
 
         for worktree_name in worktrees.iter().flatten() {
-            if let Ok(worktree) = self.repo.find_worktree(worktree_name)
-                && let Some(path) = worktree.path().to_str()
-            {
-                // Check if workspace actually exists
-                if !Path::new(path).exists() {
-                    continue;
-                }
+            if let Ok(worktree) = self.repo.find_worktree(worktree_name) {
+                if let Some(path) = worktree.path().to_str() {
+                    // Check if workspace actually exists
+                    if !Path::new(path).exists() {
+                        continue;
+                    }
 
-                // Open workspace repository and get current branch name
-                let branch_name = match Repository::open(path) {
-                    Ok(workspace_repo) => match workspace_repo.head() {
-                        Ok(head_ref) => {
-                            if let Some(name) = head_ref.shorthand() {
-                                name.to_string()
-                            } else {
-                                format!("work/{worktree_name}")
+                    // Open workspace repository and get current branch name
+                    let branch_name = match Repository::open(path) {
+                        Ok(workspace_repo) => match workspace_repo.head() {
+                            Ok(head_ref) => {
+                                if let Some(name) = head_ref.shorthand() {
+                                    name.to_string()
+                                } else {
+                                    format!("work/{worktree_name}")
+                                }
                             }
-                        }
+                            Err(_) => format!("work/{worktree_name}"),
+                        },
                         Err(_) => format!("work/{worktree_name}"),
-                    },
-                    Err(_) => format!("work/{worktree_name}"),
-                };
+                    };
 
-                workspace_list.push(WorkspaceInfo {
-                    name: worktree_name.to_string(),
-                    path: path.to_string(),
-                    branch: branch_name,
-                });
+                    workspace_list.push(WorkspaceInfo {
+                        name: worktree_name.to_string(),
+                        path: path.to_string(),
+                        branch: branch_name,
+                    });
+                }
             }
         }
 
@@ -615,13 +616,13 @@ mod tests {
     // すべてのテスト用ワークスペースを一括削除
     #[allow(dead_code)]
     fn cleanup_all_test_workspaces() {
-        if let Ok(manager) = WorkspaceManager::new()
-            && let Ok(workspaces) = manager.list_workspaces()
-        {
-            for workspace in workspaces {
-                // test-workspacesディレクトリ内のワークスペースを削除
-                if workspace.path.contains("test-workspaces") {
-                    let _ = manager.remove_workspace(&workspace.name);
+        if let Ok(manager) = WorkspaceManager::new() {
+            if let Ok(workspaces) = manager.list_workspaces() {
+                for workspace in workspaces {
+                    // test-workspacesディレクトリ内のワークスペースを削除
+                    if workspace.path.contains("test-workspaces") {
+                        let _ = manager.remove_workspace(&workspace.name);
+                    }
                 }
             }
         }
@@ -954,11 +955,9 @@ mod tests {
             assert!(result.is_err());
 
             if let Err(error_msg) = result {
-                assert!(
-                    error_msg
-                        .to_string()
-                        .contains("ワークスペースが見つかりません")
-                );
+                assert!(error_msg
+                    .to_string()
+                    .contains("ワークスペースが見つかりません"));
             }
         }
     }
@@ -1198,11 +1197,9 @@ mod tests {
             assert!(details.status.contains("ワークスペースが存在しません"));
             assert!(details.files_info.contains("不明"));
             assert!(details.size.contains("不明"));
-            assert!(
-                details
-                    .recent_commits
-                    .contains(&"ワークスペースが存在しません".to_string())
-            );
+            assert!(details
+                .recent_commits
+                .contains(&"ワークスペースが存在しません".to_string()));
         }
     }
 }
