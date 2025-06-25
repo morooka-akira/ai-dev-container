@@ -1,6 +1,7 @@
 use crate::error::{GworkError, GworkResult};
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::io::{self, Write};
 use std::path::Path;
 use tracing::{debug, error, warn};
 
@@ -98,6 +99,77 @@ pub fn _test_serialize() {
     let config = WorkspaceConfig::default();
     let yaml = serde_yaml::to_string(&config).unwrap();
     println!("Default config YAML:\n{yaml}");
+}
+
+/// Generate a template configuration file
+pub fn generate_template_config(output_path: &str) -> GworkResult<()> {
+    debug!("Generating template configuration file: {}", output_path);
+
+    // Check if file already exists
+    if Path::new(output_path).exists() {
+        debug!("Configuration file already exists: {}", output_path);
+        
+        // Ask for confirmation to overwrite
+        print!("Configuration file '{}' already exists. Overwrite? (y/N): ", output_path);
+        io::stdout().flush().map_err(|e| {
+            error!("Failed to flush stdout: {}", e);
+            GworkError::io(format!("IO error: {e}"))
+        })?;
+
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).map_err(|e| {
+            error!("Failed to read user input: {}", e);
+            GworkError::io(format!("Input error: {e}"))
+        })?;
+
+        let input = input.trim().to_lowercase();
+        if input != "y" && input != "yes" {
+            debug!("User cancelled overwrite operation");
+            println!("Operation cancelled.");
+            return Ok(());
+        }
+    }
+
+    let template_content = create_template_content();
+    
+    fs::write(output_path, template_content).map_err(|e| {
+        error!("Failed to write template file: {} - {}", output_path, e);
+        GworkError::io(format!("Failed to write configuration file: {e}"))
+    })?;
+
+    println!("✅ Configuration template created: {}", output_path);
+    println!("📝 Edit the file to customize your workspace settings");
+    
+    debug!("Template configuration file generated successfully: {}", output_path);
+    Ok(())
+}
+
+/// Create template configuration content with comments
+fn create_template_content() -> String {
+    r#"# Gwork Configuration Template
+# Workspace management settings for git worktree automation
+
+workspace:
+  # Base directory for creating workspaces (relative to current directory)
+  base_dir: "../workspaces"
+  
+  # Branch name prefix for new branches
+  branch_prefix: "work/"
+  
+  # Files to copy from main workspace to new workspace
+  copy_files:
+    - ".env"
+    - ".env.local"
+    # - "config/database.yml"
+    # - "docker-compose.override.yml"
+  
+  # Commands to execute after workspace creation
+  pre_commands:
+    - "npm install"
+    # - "cargo build"
+    # - "bundle install"
+    # - "docker-compose up -d"
+"#.to_string()
 }
 
 #[cfg(test)]

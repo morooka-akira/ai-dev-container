@@ -27,6 +27,15 @@ pub enum Commands {
         )]
         print_path_only: bool,
     },
+    Init {
+        #[arg(
+            short = 'o',
+            long = "output",
+            default_value = DEFAULT_CONFIG_FILE,
+            help = "Output path for the configuration file"
+        )]
+        output: String,
+    },
 }
 
 #[cfg(test)]
@@ -238,6 +247,48 @@ mod tests {
                 }
                 _ => panic!("Expected Start command"),
             }
+        }
+    }
+
+    #[test]
+    fn test_cli_init_command() {
+        // Parse init command with default output
+        let args = vec!["ai-workspace", "init"];
+        let cli = Cli::try_parse_from(args).unwrap();
+
+        match cli.command {
+            Commands::Init { output } => {
+                assert_eq!(output, DEFAULT_CONFIG_FILE); // Default value
+            }
+            _ => panic!("Expected Init command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_init_command_with_output() {
+        // Specify output argument for init command
+        let args = vec!["ai-workspace", "init", "--output", "custom.yml"];
+        let cli = Cli::try_parse_from(args).unwrap();
+
+        match cli.command {
+            Commands::Init { output } => {
+                assert_eq!(output, "custom.yml");
+            }
+            _ => panic!("Expected Init command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_init_command_with_short_output() {
+        // Specify short form output argument for init command
+        let args = vec!["ai-workspace", "init", "-o", "short.yml"];
+        let cli = Cli::try_parse_from(args).unwrap();
+
+        match cli.command {
+            Commands::Init { output } => {
+                assert_eq!(output, "short.yml");
+            }
+            _ => panic!("Expected Init command"),
         }
     }
 }
