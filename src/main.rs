@@ -8,7 +8,7 @@ mod workspace;
 use clap::Parser;
 use cli::{Cli, Commands};
 use config::{generate_template_config, load_config_from_path};
-use error::GworkError;
+use error::GitwsError;
 use tracing::{debug, error};
 use workspace::WorkspaceManager;
 
@@ -25,7 +25,7 @@ fn main() {
     );
     init_logging(is_tui_mode);
 
-    debug!("Starting gwork application");
+    debug!("Starting gitws application");
     debug!("Command line arguments parsed");
 
     let result = match cli.command {
@@ -131,7 +131,7 @@ fn main() {
                             Err(e) => {
                                 error!("TUI error occurred: {}", e);
                                 eprintln!("TUI error: {e}");
-                                Err(GworkError::tui(format!("TUI error: {e}")))
+                                Err(GitwsError::tui(format!("TUI error: {e}")))
                             }
                         }
                     }
@@ -151,7 +151,7 @@ fn main() {
         std::process::exit(1);
     }
 
-    debug!("Exiting gwork application normally");
+    debug!("Exiting gitws application normally");
 }
 
 /// Initialize logging
@@ -163,13 +163,13 @@ fn init_logging(is_tui_mode: bool) {
     let default_level = if cfg!(debug_assertions) {
         // Debug build
         if is_tui_mode {
-            "gwork=warn"
+            "gitws=warn"
         } else {
-            "gwork=info"
+            "gitws=info"
         }
     } else {
         // Release build: show errors only
-        "gwork=error"
+        "gitws=error"
     };
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new(default_level));

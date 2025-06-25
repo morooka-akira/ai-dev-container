@@ -56,7 +56,7 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
     // Workspace list
     if app.workspaces.is_empty() {
         let empty_msg = Paragraph::new(
-            "No workspaces found.\n\nCreate a workspace with 'gwork start <task-name>'.",
+            "No workspaces found.\n\nCreate a workspace with 'gitws start <task-name>'.",
         )
         .style(Style::default().fg(Color::Yellow))
         .block(

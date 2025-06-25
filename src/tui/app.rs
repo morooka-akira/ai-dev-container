@@ -1,4 +1,4 @@
-use crate::error::GworkResult;
+use crate::error::GitwsResult;
 use crate::workspace::{WorkspaceInfo, WorkspaceManager};
 use tracing::debug;
 
@@ -23,7 +23,7 @@ impl App {
         }
     }
 
-    pub fn load_workspaces(&mut self, workspace_manager: &WorkspaceManager) -> GworkResult<()> {
+    pub fn load_workspaces(&mut self, workspace_manager: &WorkspaceManager) -> GitwsResult<()> {
         debug!("Loading workspace list into TUI app");
         self.workspaces = workspace_manager.list_workspaces()?;
 
