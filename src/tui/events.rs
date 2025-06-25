@@ -6,8 +6,8 @@ use std::time::Duration;
 pub enum AppAction {
     None,
     Quit,
-    NavigateToWorkspace(String), // Return path
-    DeleteWorkspace(String),     // Workspace name to delete
+    NavigateToWorkspace(String),   // Return path
+    DeleteWorkspaces(Vec<String>), // Workspace names to delete (supports bulk delete)
 }
 
 pub fn handle_events(app: &mut App) -> std::io::Result<AppAction> {
@@ -53,20 +53,34 @@ pub fn handle_events(app: &mut App) -> std::io::Result<AppAction> {
                     }
                 }
                 KeyCode::Char('d') => {
-                    if !app.is_in_delete_confirmation()
-                        && !app.is_in_details_view()
-                        && app.get_selected_workspace().is_some()
-                    {
-                        app.show_delete_confirmation();
+                    if !app.is_in_delete_confirmation() && !app.is_in_details_view() {
+                        // Check if any workspaces are selected, or use current workspace
+                        let selected_count = app.get_selected_count();
+                        if selected_count > 0 || app.get_selected_workspace().is_some() {
+                            app.show_delete_confirmation();
+                        }
                     }
                     Ok(AppAction::None)
                 }
                 KeyCode::Char('y') | KeyCode::Char('Y') => {
                     if app.is_in_delete_confirmation() {
-                        if let Some(workspace) = app.get_selected_workspace() {
-                            let workspace_name = workspace.name.clone();
+                        let selected_count = app.get_selected_count();
+                        let workspace_names = if selected_count > 0 {
+                            // Use selected workspaces
+                            app.get_selected_workspaces()
+                                .into_iter()
+                                .map(|w| w.name.clone())
+                                .collect()
+                        } else if let Some(workspace) = app.get_selected_workspace() {
+                            // Use current workspace if none are selected
+                            vec![workspace.name.clone()]
+                        } else {
+                            vec![]
+                        };
+
+                        if !workspace_names.is_empty() {
                             app.hide_delete_confirmation();
-                            Ok(AppAction::DeleteWorkspace(workspace_name))
+                            Ok(AppAction::DeleteWorkspaces(workspace_names))
                         } else {
                             Ok(AppAction::None)
                         }
@@ -86,6 +100,20 @@ pub fn handle_events(app: &mut App) -> std::io::Result<AppAction> {
                         && app.get_selected_workspace().is_some()
                     {
                         app.show_details();
+                    }
+                    Ok(AppAction::None)
+                }
+                KeyCode::Char(' ') => {
+                    // Space key: toggle selection of current workspace
+                    if !app.is_in_delete_confirmation() && !app.is_in_details_view() {
+                        app.toggle_current_selection();
+                    }
+                    Ok(AppAction::None)
+                }
+                KeyCode::Char('a') => {
+                    // 'a' key: toggle all workspaces selection
+                    if !app.is_in_delete_confirmation() && !app.is_in_details_view() {
+                        app.toggle_all_selection();
                     }
                     Ok(AppAction::None)
                 }
@@ -125,6 +153,7 @@ mod tests {
                 branch: "work/test2".to_string(),
             },
         ];
+        app.selected_workspaces = vec![false, false];
         app.selected_index = 0;
         app
     }
@@ -138,8 +167,8 @@ mod tests {
             AppAction::NavigateToWorkspace("/test/path".to_string())
         );
         assert_eq!(
-            AppAction::DeleteWorkspace("workspace1".to_string()),
-            AppAction::DeleteWorkspace("workspace1".to_string())
+            AppAction::DeleteWorkspaces(vec!["workspace1".to_string()]),
+            AppAction::DeleteWorkspaces(vec!["workspace1".to_string()])
         );
 
         assert_ne!(AppAction::None, AppAction::Quit);
@@ -148,8 +177,8 @@ mod tests {
             AppAction::NavigateToWorkspace("/test/path2".to_string())
         );
         assert_ne!(
-            AppAction::DeleteWorkspace("workspace1".to_string()),
-            AppAction::DeleteWorkspace("workspace2".to_string())
+            AppAction::DeleteWorkspaces(vec!["workspace1".to_string()]),
+            AppAction::DeleteWorkspaces(vec!["workspace2".to_string()])
         );
     }
 
@@ -234,10 +263,10 @@ mod tests {
 
         // Selected workspace is returned as delete action
         if let Some(workspace) = app.get_selected_workspace() {
-            let expected_action = AppAction::DeleteWorkspace(workspace.name.clone());
+            let expected_action = AppAction::DeleteWorkspaces(vec![workspace.name.clone()]);
             assert_eq!(
                 expected_action,
-                AppAction::DeleteWorkspace("test1".to_string())
+                AppAction::DeleteWorkspaces(vec!["test1".to_string()])
             );
         }
     }

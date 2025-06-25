@@ -208,19 +208,41 @@ fn run_tui() -> std::io::Result<Option<String>> {
         match tui::events::handle_events(&mut app)? {
             tui::events::AppAction::Quit => break None,
             tui::events::AppAction::NavigateToWorkspace(path) => break Some(path),
-            tui::events::AppAction::DeleteWorkspace(workspace_name) => {
-                // Delete workspace
-                match workspace_manager.remove_workspace(&workspace_name) {
-                    Ok(()) => {
-                        // Also remove from app state
-                        app.remove_workspace(&workspace_name);
+            tui::events::AppAction::DeleteWorkspaces(workspace_names) => {
+                // Delete workspaces (supports bulk delete)
+                if workspace_names.len() > 1 {
+                    // Use bulk delete method for multiple workspaces
+                    match workspace_manager.remove_multiple_workspaces(&workspace_names) {
+                        Ok(()) => {
+                            // Remove all from app state
+                            for workspace_name in &workspace_names {
+                                app.remove_workspace(workspace_name);
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("Bulk deletion error: {e}");
+                            // Update app state for all workspaces (sync display with actual state)
+                            for workspace_name in &workspace_names {
+                                app.remove_workspace(workspace_name);
+                            }
+                        }
                     }
-                    Err(e) => {
-                        eprintln!("Deletion error: {e}");
-                        // Update app state even if error occurs (sync display with actual state)
-                        app.remove_workspace(&workspace_name);
+                } else {
+                    // Single workspace deletion
+                    for workspace_name in workspace_names {
+                        match workspace_manager.remove_workspace(&workspace_name) {
+                            Ok(()) => {
+                                app.remove_workspace(&workspace_name);
+                            }
+                            Err(e) => {
+                                eprintln!("Deletion error for {workspace_name}: {e}");
+                                app.remove_workspace(&workspace_name);
+                            }
+                        }
                     }
                 }
+                // Clear selections after any delete operation
+                app.clear_all_selections();
             }
             tui::events::AppAction::None => {}
         }

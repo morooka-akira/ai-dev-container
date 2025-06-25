@@ -385,6 +385,51 @@ impl WorkspaceManager {
         }
     }
 
+    /// Remove multiple workspaces at once
+    pub fn remove_multiple_workspaces(&self, workspace_names: &[String]) -> GworkResult<()> {
+        debug!("Deleting {} workspaces", workspace_names.len());
+
+        let mut errors = Vec::new();
+        let mut deleted_count = 0;
+
+        for workspace_name in workspace_names {
+            match self.remove_workspace(workspace_name) {
+                Ok(()) => {
+                    debug!("Successfully deleted workspace: {}", workspace_name);
+                    deleted_count += 1;
+                }
+                Err(e) => {
+                    error!("Failed to delete workspace {}: {}", workspace_name, e);
+                    errors.push(format!("{}: {}", workspace_name, e));
+                }
+            }
+        }
+
+        if errors.is_empty() {
+            debug!("All {} workspaces deleted successfully", deleted_count);
+            Ok(())
+        } else if deleted_count > 0 {
+            warn!(
+                "Partial deletion: {} out of {} workspaces deleted. Errors: {:?}",
+                deleted_count,
+                workspace_names.len(),
+                errors
+            );
+            Err(GworkError::workspace(format!(
+                "Partial deletion completed. {} out of {} workspaces deleted. Errors: {}",
+                deleted_count,
+                workspace_names.len(),
+                errors.join(", ")
+            )))
+        } else {
+            error!("Failed to delete any workspaces: {:?}", errors);
+            Err(GworkError::workspace(format!(
+                "Failed to delete any workspaces: {}",
+                errors.join(", ")
+            )))
+        }
+    }
+
     pub fn get_workspace_details(
         &self,
         workspace_info: &WorkspaceInfo,
