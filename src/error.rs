@@ -2,7 +2,7 @@ use thiserror::Error;
 
 /// Unified error type used throughout the application
 #[derive(Error, Debug)]
-pub enum GworkError {
+pub enum GitwsError {
     /// Git repository related errors
     #[error("Git repository error: {message}")]
     Git { message: String },
@@ -28,7 +28,7 @@ pub enum GworkError {
     General { message: String },
 }
 
-impl GworkError {
+impl GitwsError {
     /// Create Git error
     pub fn git<S: Into<String>>(message: S) -> Self {
         Self::Git {
@@ -73,7 +73,7 @@ impl GworkError {
     }
 }
 
-impl From<git2::Error> for GworkError {
+impl From<git2::Error> for GitwsError {
     fn from(err: git2::Error) -> Self {
         let message = match err.code() {
             git2::ErrorCode::NotFound => "Specified resource not found".to_string(),
@@ -107,7 +107,7 @@ impl From<git2::Error> for GworkError {
     }
 }
 
-impl From<std::io::Error> for GworkError {
+impl From<std::io::Error> for GitwsError {
     fn from(err: std::io::Error) -> Self {
         let message = match err.kind() {
             std::io::ErrorKind::NotFound => "File or directory not found".to_string(),
@@ -133,14 +133,14 @@ impl From<std::io::Error> for GworkError {
     }
 }
 
-impl From<serde_yaml::Error> for GworkError {
+impl From<serde_yaml::Error> for GitwsError {
     fn from(err: serde_yaml::Error) -> Self {
         Self::config(format!("Failed to parse YAML configuration file: {err}"))
     }
 }
 
 /// Unified Result type used throughout the application
-pub type GworkResult<T> = Result<T, GworkError>;
+pub type GitwsResult<T> = Result<T, GitwsError>;
 
 #[cfg(test)]
 mod tests {
@@ -148,46 +148,46 @@ mod tests {
 
     #[test]
     fn test_error_creation() {
-        let git_error = GworkError::git("Test Git error");
-        assert!(matches!(git_error, GworkError::Git { .. }));
+        let git_error = GitwsError::git("Test Git error");
+        assert!(matches!(git_error, GitwsError::Git { .. }));
         assert_eq!(
             git_error.to_string(),
             "Git repository error: Test Git error"
         );
 
-        let io_error = GworkError::io("Test IO error");
-        assert!(matches!(io_error, GworkError::Io { .. }));
+        let io_error = GitwsError::io("Test IO error");
+        assert!(matches!(io_error, GitwsError::Io { .. }));
         assert_eq!(io_error.to_string(), "File operation error: Test IO error");
 
-        let config_error = GworkError::config("Test config error");
-        assert!(matches!(config_error, GworkError::Config { .. }));
+        let config_error = GitwsError::config("Test config error");
+        assert!(matches!(config_error, GitwsError::Config { .. }));
         assert_eq!(
             config_error.to_string(),
             "Configuration file error: Test config error"
         );
 
-        let workspace_error = GworkError::workspace("Test workspace error");
-        assert!(matches!(workspace_error, GworkError::Workspace { .. }));
+        let workspace_error = GitwsError::workspace("Test workspace error");
+        assert!(matches!(workspace_error, GitwsError::Workspace { .. }));
         assert_eq!(
             workspace_error.to_string(),
             "Workspace error: Test workspace error"
         );
 
-        let tui_error = GworkError::tui("Test TUI error");
-        assert!(matches!(tui_error, GworkError::Tui { .. }));
+        let tui_error = GitwsError::tui("Test TUI error");
+        assert!(matches!(tui_error, GitwsError::Tui { .. }));
         assert_eq!(tui_error.to_string(), "TUI error: Test TUI error");
 
-        let general_error = GworkError::general("Test general error");
-        assert!(matches!(general_error, GworkError::General { .. }));
+        let general_error = GitwsError::general("Test general error");
+        assert!(matches!(general_error, GitwsError::General { .. }));
         assert_eq!(general_error.to_string(), "Error: Test general error");
     }
 
     #[test]
     fn test_io_error_conversion() {
         let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "test file not found");
-        let gwork_err: GworkError = io_err.into();
-        assert!(matches!(gwork_err, GworkError::Io { .. }));
-        assert!(gwork_err
+        let gitws_err: GitwsError = io_err.into();
+        assert!(matches!(gitws_err, GitwsError::Io { .. }));
+        assert!(gitws_err
             .to_string()
             .contains("File or directory not found"));
     }
@@ -196,23 +196,23 @@ mod tests {
     fn test_yaml_error_conversion() {
         let yaml_content = "invalid: yaml: content: [";
         let yaml_err = serde_yaml::from_str::<serde_yaml::Value>(yaml_content).unwrap_err();
-        let gwork_err: GworkError = yaml_err.into();
-        assert!(matches!(gwork_err, GworkError::Config { .. }));
-        assert!(gwork_err
+        let gitws_err: GitwsError = yaml_err.into();
+        assert!(matches!(gitws_err, GitwsError::Config { .. }));
+        assert!(gitws_err
             .to_string()
             .contains("Failed to parse YAML configuration file"));
     }
 
     #[test]
     fn test_error_display() {
-        let error = GworkError::workspace("Test message");
+        let error = GitwsError::workspace("Test message");
         let formatted = format!("{error}");
         assert_eq!(formatted, "Workspace error: Test message");
     }
 
     #[test]
     fn test_error_debug() {
-        let error = GworkError::git("Debug test");
+        let error = GitwsError::git("Debug test");
         let debug_str = format!("{error:?}");
         assert!(debug_str.contains("Git"));
         assert!(debug_str.contains("Debug test"));

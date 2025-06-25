@@ -1,4 +1,4 @@
-use crate::error::{GworkError, GworkResult};
+use crate::error::{GitwsError, GitwsResult};
 use git2::{Repository, WorktreeAddOptions};
 use std::fs;
 use std::path::Path;
@@ -27,11 +27,11 @@ pub struct WorkspaceDetails {
 }
 
 impl WorkspaceManager {
-    pub fn new() -> GworkResult<Self> {
+    pub fn new() -> GitwsResult<Self> {
         debug!("Initializing WorkspaceManager");
         let repo = Repository::open(".").map_err(|e| {
             error!("Failed to open Git repository: {}", e);
-            GworkError::git(format!("Git repository not found: {e}"))
+            GitwsError::git(format!("Git repository not found: {e}"))
         })?;
         debug!("Git repository opened successfully");
         Ok(Self { repo })
@@ -44,7 +44,7 @@ impl WorkspaceManager {
         branch_prefix: &str,
         copy_files: &[String],
         pre_commands: &[String],
-    ) -> GworkResult<WorkspaceInfo> {
+    ) -> GitwsResult<WorkspaceInfo> {
         let timestamp = crate::utils::generate_timestamp();
         let workspace_name = format!("{timestamp}-{task_name}");
         let branch_name = if branch_prefix.is_empty() {
@@ -68,7 +68,7 @@ impl WorkspaceManager {
             debug!("Creating base directory: {}", parent.display());
             fs::create_dir_all(parent).map_err(|e| {
                 error!("Failed to create directory: {} - {}", parent.display(), e);
-                GworkError::io(format!("Directory creation error: {e}"))
+                GitwsError::io(format!("Directory creation error: {e}"))
             })?;
         }
 
@@ -79,30 +79,30 @@ impl WorkspaceManager {
             .worktree(&workspace_name, Path::new(&workspace_path), Some(&opts))
             .map_err(|e| {
                 error!("Failed to create worktree: {}", e);
-                GworkError::git(format!("Worktree creation error: {e}"))
+                GitwsError::git(format!("Worktree creation error: {e}"))
             })?;
 
         // Create and switch to branch
         debug!("Opening created workspace");
         let worktree_repo = Repository::open(&workspace_path).map_err(|e| {
             error!("Failed to open created workspace: {}", e);
-            GworkError::git(format!("Created workspace open error: {e}"))
+            GitwsError::git(format!("Created workspace open error: {e}"))
         })?;
 
         debug!("Getting HEAD commit");
         let head = worktree_repo.head().map_err(|e| {
             error!("Failed to get HEAD: {}", e);
-            GworkError::git(format!("HEAD retrieval error: {e}"))
+            GitwsError::git(format!("HEAD retrieval error: {e}"))
         })?;
 
         let target_commit = head.target().ok_or_else(|| {
             error!("Cannot get HEAD commit ID");
-            GworkError::git("Cannot get HEAD commit ID".to_string())
+            GitwsError::git("Cannot get HEAD commit ID".to_string())
         })?;
 
         let commit = worktree_repo.find_commit(target_commit).map_err(|e| {
             error!("Failed to get commit: {}", e);
-            GworkError::git(format!("Commit retrieval error: {e}"))
+            GitwsError::git(format!("Commit retrieval error: {e}"))
         })?;
 
         debug!("Creating branch: {}", branch_name);
@@ -110,7 +110,7 @@ impl WorkspaceManager {
             .branch(&branch_name, &commit, false)
             .map_err(|e| {
                 error!("Failed to create branch: {} - {}", branch_name, e);
-                GworkError::git(format!("Branch creation error: {e}"))
+                GitwsError::git(format!("Branch creation error: {e}"))
             })?;
 
         debug!("Switching to branch: {}", branch_name);
@@ -118,7 +118,7 @@ impl WorkspaceManager {
             .set_head(&format!("refs/heads/{branch_name}"))
             .map_err(|e| {
                 error!("Failed to switch branch: {} - {}", branch_name, e);
-                GworkError::git(format!("Branch switching error: {e}"))
+                GitwsError::git(format!("Branch switching error: {e}"))
             })?;
 
         // File copy processing
@@ -230,11 +230,11 @@ impl WorkspaceManager {
         }
     }
 
-    pub fn list_workspaces(&self) -> GworkResult<Vec<WorkspaceInfo>> {
+    pub fn list_workspaces(&self) -> GitwsResult<Vec<WorkspaceInfo>> {
         debug!("Getting workspace list");
         let worktrees = self.repo.worktrees().map_err(|e| {
             error!("Failed to get worktree list: {}", e);
-            GworkError::git(format!("Worktree list retrieval error: {e}"))
+            GitwsError::git(format!("Worktree list retrieval error: {e}"))
         })?;
 
         let mut workspace_list = Vec::new();
@@ -278,7 +278,7 @@ impl WorkspaceManager {
     }
 
     #[allow(dead_code)]
-    pub fn remove_workspace(&self, workspace_name: &str) -> GworkResult<()> {
+    pub fn remove_workspace(&self, workspace_name: &str) -> GitwsResult<()> {
         debug!("Deleting workspace: {}", workspace_name);
         // First identify branch name associated with workspace
         let mut branch_to_delete = None;
@@ -302,7 +302,7 @@ impl WorkspaceManager {
             .output()
             .map_err(|e| {
                 error!("git worktree removeコマンド実行に失敗しました: {}", e);
-                GworkError::git(format!("git worktree removeコマンド実行エラー: {e}"))
+                GitwsError::git(format!("git worktree removeコマンド実行エラー: {e}"))
             })?;
 
         let worktree_removed = output.status.success();
@@ -342,7 +342,7 @@ impl WorkspaceManager {
                 .output()
                 .map_err(|e| {
                     error!("git worktree removeコマンド実行に失敗しました: {}", e);
-                    GworkError::git(format!("git worktree removeコマンド実行エラー: {e}"))
+                    GitwsError::git(format!("git worktree removeコマンド実行エラー: {e}"))
                 })?;
 
             if output.status.success() {
@@ -379,14 +379,14 @@ impl WorkspaceManager {
             Ok(())
         } else {
             error!("ワークスペースの削除に失敗しました: {}", workspace_name);
-            Err(GworkError::workspace(format!(
+            Err(GitwsError::workspace(format!(
                 "ワークスペースが見つかりません: {workspace_name}"
             )))
         }
     }
 
     /// Remove multiple workspaces at once
-    pub fn remove_multiple_workspaces(&self, workspace_names: &[String]) -> GworkResult<()> {
+    pub fn remove_multiple_workspaces(&self, workspace_names: &[String]) -> GitwsResult<()> {
         debug!("Deleting {} workspaces", workspace_names.len());
 
         let mut errors = Vec::new();
@@ -415,7 +415,7 @@ impl WorkspaceManager {
                 workspace_names.len(),
                 errors
             );
-            Err(GworkError::workspace(format!(
+            Err(GitwsError::workspace(format!(
                 "Partial deletion completed. {} out of {} workspaces deleted. Errors: {}",
                 deleted_count,
                 workspace_names.len(),
@@ -423,7 +423,7 @@ impl WorkspaceManager {
             )))
         } else {
             error!("Failed to delete any workspaces: {:?}", errors);
-            Err(GworkError::workspace(format!(
+            Err(GitwsError::workspace(format!(
                 "Failed to delete any workspaces: {}",
                 errors.join(", ")
             )))
@@ -433,7 +433,7 @@ impl WorkspaceManager {
     pub fn get_workspace_details(
         &self,
         workspace_info: &WorkspaceInfo,
-    ) -> GworkResult<WorkspaceDetails> {
+    ) -> GitwsResult<WorkspaceDetails> {
         debug!(
             "ワークスペースの詳細情報を取得します: {}",
             workspace_info.name
@@ -680,7 +680,7 @@ mod tests {
     }
 
     impl TestWorkspaceGuard {
-        fn new() -> GworkResult<Self> {
+        fn new() -> GitwsResult<Self> {
             Ok(Self {
                 manager: WorkspaceManager::new()?,
                 workspace_names: Vec::new(),
@@ -696,7 +696,7 @@ mod tests {
             task_name: &str,
             base_dir: &str,
             branch_prefix: &str,
-        ) -> GworkResult<WorkspaceInfo> {
+        ) -> GitwsResult<WorkspaceInfo> {
             self.manager
                 .create_workspace_with_config(task_name, base_dir, branch_prefix, &[], &[])
         }

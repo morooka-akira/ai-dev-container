@@ -1,4 +1,4 @@
-use crate::error::{GworkError, GworkResult};
+use crate::error::{GitwsError, GitwsResult};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::{self, Write};
@@ -31,9 +31,9 @@ impl Default for WorkspaceConfig {
     }
 }
 
-/// Load configuration file and return GworkError on error
+/// Load configuration file and return GitwsError on error
 #[allow(dead_code)]
-pub fn load_config_from_path_safe(path: &str) -> GworkResult<WorkspaceConfig> {
+pub fn load_config_from_path_safe(path: &str) -> GitwsResult<WorkspaceConfig> {
     debug!(
         "Starting configuration file loading (error handling version): {}",
         path
@@ -42,21 +42,21 @@ pub fn load_config_from_path_safe(path: &str) -> GworkResult<WorkspaceConfig> {
     if Path::new(path).exists() {
         let content = fs::read_to_string(path).map_err(|e| {
             error!("Failed to read configuration file: {} - {}", path, e);
-            GworkError::config(format!("Configuration file read error: {e}"))
+            GitwsError::config(format!("Configuration file read error: {e}"))
         })?;
 
         debug!("Configuration file content read: {} bytes", content.len());
 
         let config = serde_yaml::from_str::<WorkspaceConfig>(&content).map_err(|e| {
             error!("Failed to parse configuration file: {} - {}", path, e);
-            GworkError::config(format!("YAML parsing error: {e}"))
+            GitwsError::config(format!("YAML parsing error: {e}"))
         })?;
 
         debug!("Configuration file loaded successfully: {}", path);
         Ok(config)
     } else {
         debug!("Configuration file does not exist: {}", path);
-        Err(GworkError::config(format!(
+        Err(GitwsError::config(format!(
             "Configuration file not found: {path}"
         )))
     }
@@ -102,7 +102,7 @@ pub fn _test_serialize() {
 }
 
 /// Generate a template configuration file
-pub fn generate_template_config(output_path: &str) -> GworkResult<()> {
+pub fn generate_template_config(output_path: &str) -> GitwsResult<()> {
     debug!("Generating template configuration file: {}", output_path);
 
     // Check if file already exists
@@ -116,13 +116,13 @@ pub fn generate_template_config(output_path: &str) -> GworkResult<()> {
         );
         io::stdout().flush().map_err(|e| {
             error!("Failed to flush stdout: {}", e);
-            GworkError::io(format!("IO error: {e}"))
+            GitwsError::io(format!("IO error: {e}"))
         })?;
 
         let mut input = String::new();
         io::stdin().read_line(&mut input).map_err(|e| {
             error!("Failed to read user input: {}", e);
-            GworkError::io(format!("Input error: {e}"))
+            GitwsError::io(format!("Input error: {e}"))
         })?;
 
         let input = input.trim().to_lowercase();
@@ -137,7 +137,7 @@ pub fn generate_template_config(output_path: &str) -> GworkResult<()> {
 
     fs::write(output_path, template_content).map_err(|e| {
         error!("Failed to write template file: {} - {}", output_path, e);
-        GworkError::io(format!("Failed to write configuration file: {e}"))
+        GitwsError::io(format!("Failed to write configuration file: {e}"))
     })?;
 
     println!("✅ Configuration template created: {}", output_path);
@@ -152,7 +152,7 @@ pub fn generate_template_config(output_path: &str) -> GworkResult<()> {
 
 /// Create template configuration content with comments
 fn create_template_content() -> String {
-    r#"# Gwork Configuration Template
+    r#"# Gitws Configuration Template
 # Workspace management settings for git worktree automation
 
 workspace:
