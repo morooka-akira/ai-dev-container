@@ -1,6 +1,6 @@
 English | [日本語](README.ja.md)
 
-# gitws - Git Workspace Manager
+# gitws - Git Worktree Manager
 
 [![Rust](https://img.shields.io/badge/rust-2024-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -49,6 +49,7 @@ gitws start feature-authentication
 ```
 
 This creates:
+
 - A new Git worktree in `../workspaces/20250625-HHMMSS-feature-authentication`
 - A new branch `work/20250625-HHMMSS-feature-authentication`
 - Copies configured files to the new workspace
@@ -74,6 +75,7 @@ awl() {
 ```
 
 After setup, restart your shell or run:
+
 ```bash
 source ~/.bashrc  # or source ~/.zshrc
 ```
@@ -85,6 +87,7 @@ awl  # Opens TUI to select and navigate to workspace
 ```
 
 **TUI Controls**:
+
 - Navigate through workspaces with ↑/↓ or j/k
 - **Press Enter to navigate to workspace**
 - Press Space to toggle selection on current workspace
@@ -94,6 +97,7 @@ awl  # Opens TUI to select and navigate to workspace
 - Press 'q' to quit
 
 **Direct execution won't navigate**:
+
 ```bash
 # ❌ This won't change directory
 gitws list
@@ -117,16 +121,16 @@ Create a `workspace.yml` file in your project root:
 workspace:
   # Base directory for workspaces
   base_dir: "../workspaces"
-  
+
   # Branch name prefix
   branch_prefix: "work/"
-  
+
   # Files to copy to new workspaces
   copy_files:
     - .env
     - .env.local
     - config/secrets.json
-    
+
   # Commands to run after workspace creation
   pre_commands:
     - "npm install"
@@ -138,6 +142,7 @@ workspace:
 ### Commands
 
 #### `init`
+
 Generate a configuration file template.
 
 ```bash
@@ -147,9 +152,11 @@ gitws init -o my-config.yml
 ```
 
 Options:
+
 - `--output <file>` or `-o <file>`: Specify output file path (default: `workspace.yml`)
 
 #### `start <task-name>`
+
 Creates a new workspace for the given task.
 
 ```bash
@@ -158,9 +165,11 @@ gitws start bugfix-login --config custom.yml
 ```
 
 Options:
+
 - `--config <file>` or `-c <file>`: Use custom configuration file (default: `workspace.yml`)
 
 #### `list`
+
 Opens the interactive TUI for workspace management.
 
 ```bash
@@ -170,20 +179,21 @@ gitws list --path-only  # Output paths only (for shell scripts)
 ```
 
 Options:
+
 - `--config <file>` or `-c <file>`: Use custom configuration file (default: `workspace.yml`)
 - `--path-only` or `-p`: Output only workspace paths
 
 ### TUI Controls
 
-| Key | Action |
-|-----|--------|
-| ↑/↓ or j/k | Navigate workspaces |
-| Enter | Open selected workspace |
-| Space | Toggle selection on current workspace |
-| a | Toggle select/deselect all |
-| d | Delete selected workspace(s) (with confirmation) |
-| i | Show workspace details |
-| q/Esc | Quit |
+| Key        | Action                                           |
+| ---------- | ------------------------------------------------ |
+| ↑/↓ or j/k | Navigate workspaces                              |
+| Enter      | Open selected workspace                          |
+| Space      | Toggle selection on current workspace            |
+| a          | Toggle select/deselect all                       |
+| d          | Delete selected workspace(s) (with confirmation) |
+| i          | Show workspace details                           |
+| q/Esc      | Quit                                             |
 
 ### Shell Integration
 
@@ -266,4 +276,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built with [clap](https://github.com/clap-rs/clap) for CLI parsing
 - TUI powered by [ratatui](https://github.com/ratatui-org/ratatui)
 - Git operations using [git2](https://github.com/rust-lang/git2-rs)
-

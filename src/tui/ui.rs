@@ -18,13 +18,9 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
         .split(f.area());
 
     // Header
-    let header = Paragraph::new("gitws Git Worktree Manager")
+    let header = Paragraph::new("Git Worktree Manager")
         .style(Style::default().fg(Color::Cyan))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Workspace Management"),
-        );
+        .block(Block::default().borders(Borders::ALL).title("gitws"));
     f.render_widget(header, chunks[0]);
 
     // Help text
@@ -56,13 +52,13 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
     // Workspace list
     if app.workspaces.is_empty() {
         let empty_msg = Paragraph::new(
-            "No workspaces found.\n\nCreate a workspace with 'gitws start <task-name>'.",
+            "No worktree found.\n\nCreate a workspace with 'gitws start <task-name>'.",
         )
         .style(Style::default().fg(Color::Yellow))
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Workspace List"),
+                .title("Worktree List"),
         );
         f.render_widget(empty_msg, content_layout[1]);
     } else {
@@ -105,7 +101,7 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title(format!("Workspace List ({} items)", app.workspaces.len())),
+                    .title(format!("Worktree List ({} items)", app.workspaces.len())),
             )
             .highlight_style(Style::default().add_modifier(Modifier::BOLD))
             .highlight_symbol("→ ");

@@ -1,19 +1,19 @@
 [English](README.md) | 日本語
 
-# gitws - Git Workspace Manager
+# gitws - Git Worktree Manager
 
 [![Rust](https://img.shields.io/badge/rust-2024-orange.svg)](https://www.rust-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Git worktreeを活用して複数の開発ワークスペースを管理するシンプルで強力なCLIツール。自動セットアップと直感的なTUIで、独立した作業環境を数秒で作成できます。
+Git worktree を活用して複数の開発ワークスペースを管理するシンプルで強力な CLI ツール。自動セットアップと直感的な TUI で、独立した作業環境を数秒で作成できます。
 
 ## ✨ 特徴
 
-- **🚀 高速ワークスペース作成**: 専用ブランチ付きのGit worktreeを1コマンドで作成
+- **🚀 高速ワークスペース作成**: 専用ブランチ付きの Git worktree を 1 コマンドで作成
 - **📁 ファイル管理**: 設定ファイルを新しいワークスペースに自動コピー
-- **⚡ 事前コマンド実行**: セットアップコマンド（npm install、cargo buildなど）を自動実行
-- **🎯 インタラクティブTUI**: 直感的なターミナルインターフェースでワークスペースの閲覧・操作・管理
-- **⚙️ 設定可能**: YAML設定ファイルで動作をカスタマイズ
+- **⚡ 事前コマンド実行**: セットアップコマンド（npm install、cargo build など）を自動実行
+- **🎯 インタラクティブ TUI**: 直感的なターミナルインターフェースでワークスペースの閲覧・操作・管理
+- **⚙️ 設定可能**: YAML 設定ファイルで動作をカスタマイズ
 - **🔗 シェル統合**: ターミナルからワークスペースへシームレスに移動
 
 ## 🛠️ インストール
@@ -26,7 +26,7 @@ cd gitws
 cargo build --release
 ```
 
-### Cargoを使用
+### Cargo を使用
 
 ```bash
 cargo install --path .
@@ -49,7 +49,8 @@ gitws start feature-authentication
 ```
 
 これにより以下が作成されます：
-- `../workspaces/20250625-HHMMSS-feature-authentication` に新しいGit worktree
+
+- `../workspaces/20250625-HHMMSS-feature-authentication` に新しい Git worktree
 - 新しいブランチ `work/20250625-HHMMSS-feature-authentication`
 - 設定されたファイルを新しいワークスペースにコピー
 - 事前設定されたセットアップコマンドを実行
@@ -74,6 +75,7 @@ awl() {
 ```
 
 設定後、シェルを再起動するか以下を実行：
+
 ```bash
 source ~/.bashrc  # または source ~/.zshrc
 ```
@@ -84,7 +86,8 @@ source ~/.bashrc  # または source ~/.zshrc
 awl  # TUIでワークスペースを選択して移動
 ```
 
-**TUI操作**：
+**TUI 操作**：
+
 - ↑/↓ または j/k でワークスペースをナビゲート
 - **Enter を押してワークスペースに移動**
 - Space でマルチ選択のトグル
@@ -94,6 +97,7 @@ awl  # TUIでワークスペースを選択して移動
 - 'q' を押して終了
 
 **直接実行では移動しません**：
+
 ```bash
 # ❌ これではディレクトリ移動しません
 gitws list
@@ -117,16 +121,16 @@ gitws init --output my-config.yml
 workspace:
   # ワークスペースのベースディレクトリ
   base_dir: "../workspaces"
-  
+
   # ブランチ名のプレフィックス
   branch_prefix: "work/"
-  
+
   # 新しいワークスペースにコピーするファイル
   copy_files:
     - .env
     - .env.local
     - config/secrets.json
-    
+
   # ワークスペース作成後に実行するコマンド
   pre_commands:
     - "npm install"
@@ -138,6 +142,7 @@ workspace:
 ### コマンド
 
 #### `init`
+
 設定ファイルテンプレートを生成します。
 
 ```bash
@@ -147,9 +152,11 @@ gitws init -o my-config.yml
 ```
 
 オプション:
+
 - `--output <ファイル>` または `-o <ファイル>`: 出力ファイルパスを指定（デフォルト: `workspace.yml`）
 
 #### `start <タスク名>`
+
 指定されたタスクの新しいワークスペースを作成します。
 
 ```bash
@@ -158,10 +165,12 @@ gitws start bugfix-login --config custom.yml
 ```
 
 オプション:
+
 - `--config <ファイル>` または `-c <ファイル>`: カスタム設定ファイルを使用（デフォルト: `workspace.yml`）
 
 #### `list`
-ワークスペース管理のためのインタラクティブTUIを開きます。
+
+ワークスペース管理のためのインタラクティブ TUI を開きます。
 
 ```bash
 gitws list
@@ -170,20 +179,21 @@ gitws list --path-only  # パス一覧を出力（シェルスクリプト用）
 ```
 
 オプション:
+
 - `--config <ファイル>` または `-c <ファイル>`: カスタム設定ファイルを使用（デフォルト: `workspace.yml`）
 - `--path-only` または `-p`: ワークスペースのパス一覧のみを出力
 
-### TUI操作
+### TUI 操作
 
-| キー | アクション |
-|-----|--------|
-| ↑/↓ または j/k | ワークスペースをナビゲート |
-| Enter | 選択したワークスペースを開く |
-| Space | 現在のワークスペースの選択状態をトグル |
-| a | 全ワークスペースの選択/選択解除をトグル |
-| d | 選択したワークスペースを削除（確認あり） |
-| i | ワークスペースの詳細を表示 |
-| q/Esc | 終了 |
+| キー           | アクション                               |
+| -------------- | ---------------------------------------- |
+| ↑/↓ または j/k | ワークスペースをナビゲート               |
+| Enter          | 選択したワークスペースを開く             |
+| Space          | 現在のワークスペースの選択状態をトグル   |
+| a              | 全ワークスペースの選択/選択解除をトグル  |
+| d              | 選択したワークスペースを削除（確認あり） |
+| i              | ワークスペースの詳細を表示               |
+| q/Esc          | 終了                                     |
 
 ### シェル統合
 
@@ -209,8 +219,8 @@ awl-list() {
 
 ### 前提条件
 
-- Rust 2024 edition以降
-- Git（worktree操作のため）
+- Rust 2024 edition 以降
+- Git（worktree 操作のため）
 
 ### ビルド
 
@@ -248,7 +258,7 @@ src/
 
 ## 🤝 コントリビューション
 
-コントリビューションを歓迎します！プルリクエストをお気軽に送信してください。大きな変更については、まず何を変更したいかを議論するためにissueを開いてください。
+コントリビューションを歓迎します！プルリクエストをお気軽に送信してください。大きな変更については、まず何を変更したいかを議論するために issue を開いてください。
 
 1. リポジトリをフォーク
 2. 機能ブランチを作成（`git checkout -b feature/amazing-feature`）
@@ -258,12 +268,11 @@ src/
 
 ## 📄 ライセンス
 
-このプロジェクトはMITライセンスの下でライセンスされています。詳細については[LICENSE](LICENSE)ファイルを参照してください。
+このプロジェクトは MIT ライセンスの下でライセンスされています。詳細については[LICENSE](LICENSE)ファイルを参照してください。
 
 ## 🙏 謝辞
 
-- Git worktree機能にインスパイアされました
-- CLI解析には[clap](https://github.com/clap-rs/clap)を使用
-- TUIは[ratatui](https://github.com/ratatui-org/ratatui)で実装
-- Git操作には[git2](https://github.com/rust-lang/git2-rs)を使用
-
+- Git worktree 機能にインスパイアされました
+- CLI 解析には[clap](https://github.com/clap-rs/clap)を使用
+- TUI は[ratatui](https://github.com/ratatui-org/ratatui)で実装
+- Git 操作には[git2](https://github.com/rust-lang/git2-rs)を使用
