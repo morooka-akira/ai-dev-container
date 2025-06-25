@@ -132,15 +132,15 @@ ai-dev-container/
 ┌─ AI Workspace Manager ─────────────────────────────┐
 │ ↑/↓ Select  Space: Multi-select  d: Delete  q: Quit │
 ├─────────────────────────────────────────────────────┤
-│ → ☑ work/feature-x                                 │
+│ → [*] work/feature-x                               │
 │   └─ ../workspaces/20250619-143022-feature-x       │
 │   └─ Status: Clean  Files: 42  Size: 1.2MB         │
 │                                                     │
-│   □ work/bugfix-y                                   │
+│   [ ] work/bugfix-y                                 │
 │   └─ ../workspaces/20250619-140512-bugfix-y        │
 │   └─ Status: Modified (3 files)  Size: 890KB       │
 │                                                     │
-│   ☑ work/refactor-z                                │
+│   [*] work/refactor-z                               │
 │   └─ ../workspaces/20250619-120345-refactor-z      │
 │   └─ Status: Clean  Files: 28  Size: 756KB         │
 │                                                     │

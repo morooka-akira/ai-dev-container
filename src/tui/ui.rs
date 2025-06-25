@@ -81,9 +81,9 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
 
                 // Checkbox symbol
                 let checkbox = if app.selected_workspaces.get(i).copied().unwrap_or(false) {
-                    "☑"
+                    "[*]"
                 } else {
-                    "□"
+                    "[ ]"
                 };
 
                 let content = vec![
