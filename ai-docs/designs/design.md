@@ -130,26 +130,30 @@ ai-dev-container/
 #### 画面レイアウト
 ```
 ┌─ AI Workspace Manager ─────────────────────────────┐
-│ ↑/↓ Select  Enter: Open  d: Delete  i: Info  q: Quit │
+│ ↑/↓ Select  Space: Multi-select  d: Delete  q: Quit │
 ├─────────────────────────────────────────────────────┤
-│ ● work/feature-x                                    │
+│ → [*] work/feature-x                               │
 │   └─ ../workspaces/20250619-143022-feature-x       │
 │   └─ Status: Clean  Files: 42  Size: 1.2MB         │
 │                                                     │
-│   work/bugfix-y                                     │
+│   [ ] work/bugfix-y                                 │
 │   └─ ../workspaces/20250619-140512-bugfix-y        │
 │   └─ Status: Modified (3 files)  Size: 890KB       │
 │                                                     │
-│   work/refactor-z                                   │
+│   [*] work/refactor-z                               │
 │   └─ ../workspaces/20250619-120345-refactor-z      │
 │   └─ Status: Clean  Files: 28  Size: 756KB         │
+│                                                     │
+│ Selected: 2/3 workspaces                            │
 └─────────────────────────────────────────────────────┘
 ```
 
 #### キーバインディング
 - **↑/↓ または j/k**: ワークスペース選択移動
 - **Enter**: 選択ワークスペースに移動（シェルスクリプト出力）
-- **d**: 選択ワークスペースの削除確認ダイアログ
+- **Space**: 現在のワークスペースの選択状態をトグル（マルチ選択）
+- **d**: 選択したワークスペース（単体または複数）の削除確認ダイアログ
+- **a**: 全てのワークスペースを選択/選択解除
 - **i**: 詳細情報モーダル表示
 - **r**: ワークスペース一覧リフレッシュ
 - **q または Esc**: TUI終了
@@ -174,6 +178,8 @@ ai-dev-container/
 ```
 
 #### 削除確認ダイアログ
+
+**単体削除の場合：**
 ```
 ┌─ Delete Workspace ──────────┐
 │ Are you sure you want to    │
@@ -184,6 +190,21 @@ ai-dev-container/
 │                             │
 │ [Y]es  [N]o                 │
 └─────────────────────────────┘
+```
+
+**バルク削除の場合：**
+```
+┌─ Delete Multiple Workspaces ──────┐
+│ Are you sure you want to delete   │
+│ these 2 workspaces?               │
+│                                   │
+│ • work/feature-x                  │
+│ • work/refactor-z                 │
+│                                   │
+│ This action cannot be undone.     │
+│                                   │
+│ [Y]es  [N]o                       │
+└───────────────────────────────────┘
 ```
 
 #### ディレクトリ移動の実装

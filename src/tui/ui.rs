@@ -37,7 +37,7 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
             .style(Style::default().fg(Color::Cyan))
             .block(Block::default().borders(Borders::ALL))
     } else {
-        Paragraph::new("↑/↓: Select  Enter: Open  d: Delete  i: Details  q: Quit")
+        Paragraph::new("↑/↓: Select  Space: Multi-select  a: All  d: Delete  i: Details  q: Quit")
             .style(Style::default().fg(Color::Gray))
             .block(Block::default().borders(Borders::ALL))
     };
@@ -47,6 +47,7 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
         .constraints([
             Constraint::Length(3), // Help
             Constraint::Min(0),    // List
+            Constraint::Length(3), // Selection status
         ])
         .split(chunks[1]);
 
@@ -78,8 +79,18 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
                     Style::default()
                 };
 
+                // Checkbox symbol
+                let checkbox = if app.selected_workspaces.get(i).copied().unwrap_or(false) {
+                    "[*]"
+                } else {
+                    "[ ]"
+                };
+
                 let content = vec![
-                    Line::from(vec![Span::styled(format!("● {}", workspace.branch), style)]),
+                    Line::from(vec![Span::styled(
+                        format!("{checkbox} {}", workspace.branch),
+                        style,
+                    )]),
                     Line::from(vec![Span::styled(
                         format!("  └─ {}", workspace.path),
                         Style::default().fg(Color::Gray),
@@ -105,6 +116,22 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
         f.render_stateful_widget(list, content_layout[1], &mut list_state);
     }
 
+    // Selection status
+    if !app.workspaces.is_empty() {
+        let selected_count = app.get_selected_count();
+        let total_count = app.workspaces.len();
+        let status_text = if selected_count > 0 {
+            format!("Selected: {selected_count}/{total_count} workspaces")
+        } else {
+            format!("Total: {total_count} workspaces")
+        };
+
+        let status = Paragraph::new(status_text)
+            .style(Style::default().fg(Color::Cyan))
+            .block(Block::default().borders(Borders::ALL));
+        f.render_widget(status, content_layout[2]);
+    }
+
     // Details dialog
     if app.is_in_details_view() {
         if let Some(workspace) = app.get_selected_workspace() {
@@ -114,7 +141,19 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
 
     // Delete confirmation dialog
     if app.is_in_delete_confirmation() {
-        if let Some(workspace) = app.get_selected_workspace() {
+        let selected_count = app.get_selected_count();
+        if selected_count > 1 {
+            // Bulk delete confirmation
+            let selected_workspaces = app.get_selected_workspaces();
+            draw_bulk_delete_confirmation_dialog(f, &selected_workspaces);
+        } else if selected_count == 1 {
+            // Single selected workspace delete
+            let selected_workspaces = app.get_selected_workspaces();
+            if let Some(workspace) = selected_workspaces.first() {
+                draw_delete_confirmation_dialog(f, &workspace.name, &workspace.path);
+            }
+        } else if let Some(workspace) = app.get_selected_workspace() {
+            // Current workspace delete (no multi-selection)
             draw_delete_confirmation_dialog(f, &workspace.name, &workspace.path);
         }
     }
@@ -273,6 +312,95 @@ fn draw_workspace_details_dialog(
 
     // Operation guide
     let guide = Paragraph::new("Press any key to close").style(
+        Style::default()
+            .fg(Color::Cyan)
+            .add_modifier(Modifier::BOLD),
+    );
+    f.render_widget(guide, dialog_layout[4]);
+}
+
+fn draw_bulk_delete_confirmation_dialog(
+    f: &mut Frame,
+    workspaces: &[&crate::workspace::WorkspaceInfo],
+) {
+    // Display modal dialog in the center of the screen
+    let area = f.area();
+    let popup_width = 80.min(area.width);
+    let popup_height = (10 + workspaces.len().min(5)).min(area.height as usize) as u16;
+
+    let popup_area = ratatui::layout::Rect {
+        x: (area.width.saturating_sub(popup_width)) / 2,
+        y: (area.height.saturating_sub(popup_height)) / 2,
+        width: popup_width,
+        height: popup_height,
+    };
+
+    // Clear background
+    f.render_widget(
+        Block::default()
+            .style(Style::default().bg(Color::Black))
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Red)),
+        popup_area,
+    );
+
+    // Dialog content
+    let workspace_list_height = workspaces.len().min(5) as u16;
+    let dialog_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(1)
+        .constraints([
+            Constraint::Length(1),                     // Title
+            Constraint::Length(1),                     // Question
+            Constraint::Length(workspace_list_height), // Workspace list
+            Constraint::Length(1),                     // Warning
+            Constraint::Length(1),                     // Operation guide
+        ])
+        .split(popup_area);
+
+    // Title
+    let title = Paragraph::new("Delete Multiple Workspaces")
+        .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD));
+    f.render_widget(title, dialog_layout[0]);
+
+    // Question
+    let question = Paragraph::new(format!(
+        "Are you sure you want to delete these {} workspaces?",
+        workspaces.len()
+    ))
+    .style(Style::default().fg(Color::White));
+    f.render_widget(question, dialog_layout[1]);
+
+    // Workspace list
+    let workspace_lines: Vec<Line> = workspaces
+        .iter()
+        .take(5) // Show max 5 workspaces
+        .map(|workspace| {
+            Line::from(vec![Span::styled(
+                format!("• {}", workspace.name),
+                Style::default().fg(Color::Yellow),
+            )])
+        })
+        .collect();
+
+    let mut all_lines = workspace_lines;
+    if workspaces.len() > 5 {
+        all_lines.push(Line::from(vec![Span::styled(
+            format!("... and {} more", workspaces.len() - 5),
+            Style::default().fg(Color::Gray),
+        )]));
+    }
+
+    let workspace_list = Paragraph::new(all_lines).style(Style::default().fg(Color::White));
+    f.render_widget(workspace_list, dialog_layout[2]);
+
+    // Warning
+    let warning =
+        Paragraph::new("This action cannot be undone.").style(Style::default().fg(Color::Yellow));
+    f.render_widget(warning, dialog_layout[3]);
+
+    // Operation guide
+    let guide = Paragraph::new("[Y]es  [N]o").style(
         Style::default()
             .fg(Color::Cyan)
             .add_modifier(Modifier::BOLD),
