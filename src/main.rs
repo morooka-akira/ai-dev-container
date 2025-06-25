@@ -7,7 +7,7 @@ mod workspace;
 
 use clap::Parser;
 use cli::{Cli, Commands};
-use config::load_config_from_path;
+use config::{generate_template_config, load_config_from_path};
 use error::GworkError;
 use tracing::{debug, error};
 use workspace::WorkspaceManager;
@@ -28,91 +28,117 @@ fn main() {
     debug!("Starting gwork application");
     debug!("Command line arguments parsed");
 
-    let workspace_manager = match WorkspaceManager::new() {
-        Ok(manager) => {
-            debug!("WorkspaceManager initialized successfully");
-            manager
-        }
-        Err(e) => {
-            error!("Failed to initialize WorkspaceManager: {}", e);
-            eprintln!("Error: {e}");
-            std::process::exit(1);
-        }
-    };
-
     let result = match cli.command {
-        Commands::Start { task_name, config } => {
-            debug!("Starting workspace creation: {}", task_name);
-            debug!("Using configuration file: {}", config);
+        Commands::Init { output } => {
+            debug!("Starting configuration file initialization");
+            debug!("Output path: {}", output);
 
-            let config = load_config_from_path(&config);
-
-            match workspace_manager.create_workspace_with_config(
-                &task_name,
-                &config.workspace.base_dir,
-                &config.workspace.branch_prefix,
-                &config.workspace.copy_files,
-                &config.workspace.pre_commands,
-            ) {
-                Ok(info) => {
-                    debug!("Workspace creation completed: {}", info.name);
+            // Init command doesn't require git repository or workspace manager
+            match generate_template_config(&output) {
+                Ok(()) => {
+                    debug!("Configuration template generated successfully");
                     Ok(())
                 }
                 Err(e) => {
-                    error!("Failed to create workspace: {}", e);
+                    error!("Failed to generate configuration template: {}", e);
                     eprintln!("❌ Error: {e}");
                     Err(e)
                 }
             }
         }
-        Commands::List {
-            config,
-            print_path_only,
-        } => {
-            debug!("Starting workspace list display");
-            debug!("Using configuration file: {}", config);
+        _ => {
+            // For other commands, initialize WorkspaceManager
+            let workspace_manager = match WorkspaceManager::new() {
+                Ok(manager) => {
+                    debug!("WorkspaceManager initialized successfully");
+                    manager
+                }
+                Err(e) => {
+                    error!("Failed to initialize WorkspaceManager: {}", e);
+                    eprintln!("Error: {e}");
+                    std::process::exit(1);
+                }
+            };
 
-            let _config = load_config_from_path(&config);
+            match cli.command {
+                Commands::Start { task_name, config } => {
+                    debug!("Starting workspace creation: {}", task_name);
+                    debug!("Using configuration file: {}", config);
 
-            if print_path_only {
-                debug!("Executing --path-only mode");
-                // --path-only mode: output list of all workspace paths
-                match workspace_manager.list_workspaces() {
-                    Ok(workspaces) => {
-                        debug!("Retrieved workspace list: {} items", workspaces.len());
-                        for workspace in workspaces {
-                            println!("{}", workspace.path);
+                    let config = load_config_from_path(&config);
+
+                    match workspace_manager.create_workspace_with_config(
+                        &task_name,
+                        &config.workspace.base_dir,
+                        &config.workspace.branch_prefix,
+                        &config.workspace.copy_files,
+                        &config.workspace.pre_commands,
+                    ) {
+                        Ok(info) => {
+                            debug!("Workspace creation completed: {}", info.name);
+                            Ok(())
                         }
-                        Ok(())
-                    }
-                    Err(e) => {
-                        error!("Failed to retrieve workspace list: {}", e);
-                        Err(e)
+                        Err(e) => {
+                            error!("Failed to create workspace: {}", e);
+                            eprintln!("❌ Error: {e}");
+                            Err(e)
+                        }
                     }
                 }
-            } else {
-                // Normal TUI mode
-                debug!("Starting TUI mode");
-                debug!("Initializing TUI");
+                Commands::List {
+                    config,
+                    print_path_only,
+                } => {
+                    debug!("Starting workspace list display");
+                    debug!("Using configuration file: {}", config);
 
-                match run_tui() {
-                    Ok(Some(selected_path)) => {
-                        debug!("Path selected in TUI: {}", selected_path);
-                        // Output path of workspace selected with Enter key
-                        // Shell function receives this path and executes cd
-                        println!("{selected_path}");
-                        Ok(())
+                    let _config = load_config_from_path(&config);
+
+                    if print_path_only {
+                        debug!("Executing --path-only mode");
+                        // --path-only mode: output list of all workspace paths
+                        match workspace_manager.list_workspaces() {
+                            Ok(workspaces) => {
+                                debug!("Retrieved workspace list: {} items", workspaces.len());
+                                for workspace in workspaces {
+                                    println!("{}", workspace.path);
+                                }
+                                Ok(())
+                            }
+                            Err(e) => {
+                                error!("Failed to retrieve workspace list: {}", e);
+                                Err(e)
+                            }
+                        }
+                    } else {
+                        // Normal TUI mode
+                        debug!("Starting TUI mode");
+                        debug!("Initializing TUI");
+
+                        match run_tui() {
+                            Ok(Some(selected_path)) => {
+                                debug!("Path selected in TUI: {}", selected_path);
+                                // Output path of workspace selected with Enter key
+                                // Shell function receives this path and executes cd
+                                println!("{selected_path}");
+                                Ok(())
+                            }
+                            Ok(None) => {
+                                debug!("TUI exited normally (no path selected)");
+                                // Exit without selecting anything
+                                Ok(())
+                            }
+                            Err(e) => {
+                                error!("TUI error occurred: {}", e);
+                                eprintln!("TUI error: {e}");
+                                Err(GworkError::tui(format!("TUI error: {e}")))
+                            }
+                        }
                     }
-                    Ok(None) => {
-                        debug!("TUI exited normally (no path selected)");
-                        // Exit without selecting anything
-                        Ok(())
-                    }
-                    Err(e) => {
-                        error!("TUI error occurred: {}", e);
-                        eprintln!("TUI error: {e}");
-                        Err(GworkError::tui(format!("TUI error: {e}")))
-                    }
+                }
+                Commands::Init { .. } => {
+                    // This case is already handled above
+                    unreachable!()
                 }
             }
         }
