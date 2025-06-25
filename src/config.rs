@@ -108,9 +108,12 @@ pub fn generate_template_config(output_path: &str) -> GworkResult<()> {
     // Check if file already exists
     if Path::new(output_path).exists() {
         debug!("Configuration file already exists: {}", output_path);
-        
+
         // Ask for confirmation to overwrite
-        print!("Configuration file '{}' already exists. Overwrite? (y/N): ", output_path);
+        print!(
+            "Configuration file '{}' already exists. Overwrite? (y/N): ",
+            output_path
+        );
         io::stdout().flush().map_err(|e| {
             error!("Failed to flush stdout: {}", e);
             GworkError::io(format!("IO error: {e}"))
@@ -131,7 +134,7 @@ pub fn generate_template_config(output_path: &str) -> GworkResult<()> {
     }
 
     let template_content = create_template_content();
-    
+
     fs::write(output_path, template_content).map_err(|e| {
         error!("Failed to write template file: {} - {}", output_path, e);
         GworkError::io(format!("Failed to write configuration file: {e}"))
@@ -139,8 +142,11 @@ pub fn generate_template_config(output_path: &str) -> GworkResult<()> {
 
     println!("✅ Configuration template created: {}", output_path);
     println!("📝 Edit the file to customize your workspace settings");
-    
-    debug!("Template configuration file generated successfully: {}", output_path);
+
+    debug!(
+        "Template configuration file generated successfully: {}",
+        output_path
+    );
     Ok(())
 }
 
@@ -169,7 +175,8 @@ workspace:
     # - "cargo build"
     # - "bundle install"
     # - "docker-compose up -d"
-"#.to_string()
+"#
+    .to_string()
 }
 
 #[cfg(test)]

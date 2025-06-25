@@ -7,7 +7,7 @@ mod workspace;
 
 use clap::Parser;
 use cli::{Cli, Commands};
-use config::{load_config_from_path, generate_template_config};
+use config::{generate_template_config, load_config_from_path};
 use error::GworkError;
 use tracing::{debug, error};
 use workspace::WorkspaceManager;
