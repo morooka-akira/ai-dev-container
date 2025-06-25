@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 
-const DEFAULT_CONFIG_FILE: &str = "workspace.yml";
+const DEFAULT_CONFIG_FILE: &str = ".gitws.yml";
 
 #[derive(Parser, Debug)]
 #[command(name = "gitws")]

@@ -26,7 +26,7 @@ gitws init -o my-config.yml
 gitws start <task-name>
 
 # オプション付き
-gitws start feature-x --config workspace.yml
+gitws start feature-x --config .gitws.yml
 ```
 
 **動作:**
@@ -59,7 +59,7 @@ gitws list -p
 ## 設定ファイル形式
 
 ```yaml
-# workspace.yml
+# .gitws.yml
 workspace:
   # worktreeのベースディレクトリ
   base_dir: "../workspaces"
@@ -97,7 +97,7 @@ gitws/
 │       ├── ui.rs         # UI描画ロジック
 │       └── events.rs     # キーイベント処理
 ├── Cargo.toml
-└── workspace.yml         # デフォルト設定ファイル
+└── .gitws.yml         # デフォルト設定ファイル
 ```
 
 ### 主要な依存クレート
@@ -114,7 +114,7 @@ gitws/
 
 1. **引数とオプションの解析**
    - タスク名（必須）
-   - 設定ファイルパス（オプション、デフォルト: ./workspace.yml）
+   - 設定ファイルパス（オプション、デフォルト: ./.gitws.yml）
 
 2. **worktree作成**
    ```rust

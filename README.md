@@ -40,7 +40,7 @@ cargo install --path .
 gitws init
 ```
 
-This creates a `workspace.yml` file. Edit it as needed for your project.
+This creates a `.gitws.yml` file. Edit it as needed for your project.
 
 ### 2. Create Your First Workspace
 
@@ -115,7 +115,7 @@ gitws init --output my-config.yml
 
 ### Configuration Example
 
-Create a `workspace.yml` file in your project root:
+Create a `.gitws.yml` file in your project root:
 
 ```yaml
 workspace:
@@ -153,7 +153,7 @@ gitws init -o my-config.yml
 
 Options:
 
-- `--output <file>` or `-o <file>`: Specify output file path (default: `workspace.yml`)
+- `--output <file>` or `-o <file>`: Specify output file path (default: `.gitws.yml`)
 
 #### `start <task-name>`
 
@@ -166,7 +166,7 @@ gitws start bugfix-login --config custom.yml
 
 Options:
 
-- `--config <file>` or `-c <file>`: Use custom configuration file (default: `workspace.yml`)
+- `--config <file>` or `-c <file>`: Use custom configuration file (default: `.gitws.yml`)
 
 #### `list`
 
@@ -180,7 +180,7 @@ gitws list --path-only  # Output paths only (for shell scripts)
 
 Options:
 
-- `--config <file>` or `-c <file>`: Use custom configuration file (default: `workspace.yml`)
+- `--config <file>` or `-c <file>`: Use custom configuration file (default: `.gitws.yml`)
 - `--path-only` or `-p`: Output only workspace paths
 
 ### TUI Controls

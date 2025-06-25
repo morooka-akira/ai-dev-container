@@ -40,7 +40,7 @@ cargo install --path .
 gitws init
 ```
 
-これにより `workspace.yml` が作成されます。必要に応じて編集してください。
+これにより `.gitws.yml` が作成されます。必要に応じて編集してください。
 
 ### 2. 最初のワークスペースを作成
 
@@ -115,7 +115,7 @@ gitws init --output my-config.yml
 
 ### 設定ファイルの例
 
-プロジェクトルートの `workspace.yml`：
+プロジェクトルートの `.gitws.yml`：
 
 ```yaml
 workspace:
@@ -153,7 +153,7 @@ gitws init -o my-config.yml
 
 オプション:
 
-- `--output <ファイル>` または `-o <ファイル>`: 出力ファイルパスを指定（デフォルト: `workspace.yml`）
+- `--output <ファイル>` または `-o <ファイル>`: 出力ファイルパスを指定（デフォルト: `.gitws.yml`）
 
 #### `start <タスク名>`
 
@@ -166,7 +166,7 @@ gitws start bugfix-login --config custom.yml
 
 オプション:
 
-- `--config <ファイル>` または `-c <ファイル>`: カスタム設定ファイルを使用（デフォルト: `workspace.yml`）
+- `--config <ファイル>` または `-c <ファイル>`: カスタム設定ファイルを使用（デフォルト: `.gitws.yml`）
 
 #### `list`
 
@@ -180,7 +180,7 @@ gitws list --path-only  # パス一覧を出力（シェルスクリプト用）
 
 オプション:
 
-- `--config <ファイル>` または `-c <ファイル>`: カスタム設定ファイルを使用（デフォルト: `workspace.yml`）
+- `--config <ファイル>` または `-c <ファイル>`: カスタム設定ファイルを使用（デフォルト: `.gitws.yml`）
 - `--path-only` または `-p`: ワークスペースのパス一覧のみを出力
 
 ### TUI 操作
