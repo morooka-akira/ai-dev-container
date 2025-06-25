@@ -18,7 +18,7 @@ pub fn draw(f: &mut Frame, app: &App, workspace_manager: &crate::workspace::Work
         .split(f.area());
 
     // Header
-    let header = Paragraph::new("AI Workspace Manager")
+    let header = Paragraph::new("gitws Git Worktree Manager")
         .style(Style::default().fg(Color::Cyan))
         .block(
             Block::default()
