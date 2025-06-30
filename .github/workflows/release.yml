@@ -88,23 +88,23 @@ jobs:
           # Linux x86_64
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: aicm-x86_64-unknown-linux-gnu
+            artifact_name: gitws-x86_64-unknown-linux-gnu
           # Linux ARM64
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            artifact_name: aicm-aarch64-unknown-linux-gnu
+            artifact_name: gitws-aarch64-unknown-linux-gnu
           # macOS Apple Silicon (arm64)
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact_name: aicm-aarch64-apple-darwin
+            artifact_name: gitws-aarch64-apple-darwin
           # macOS Intel (x86_64)
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact_name: aicm-x86_64-apple-darwin
+            artifact_name: gitws-x86_64-apple-darwin
           # Windows x86_64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: aicm-x86_64-pc-windows-msvc.exe
+            artifact_name: gitws-x86_64-pc-windows-msvc.exe
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -138,9 +138,9 @@ jobs:
         run: |
           mkdir -p dist
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            cp target/${{ matrix.target }}/release/aicm.exe dist/${{ matrix.artifact_name }}
+            cp target/${{ matrix.target }}/release/gitws.exe dist/${{ matrix.artifact_name }}
           else
-            cp target/${{ matrix.target }}/release/aicm dist/${{ matrix.artifact_name }}
+            cp target/${{ matrix.target }}/release/gitws dist/${{ matrix.artifact_name }}
           fi
       - name: Upload artifact
         uses: actions/upload-artifact@v4
