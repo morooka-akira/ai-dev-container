@@ -1,0 +1,95 @@
+name: Auto Release on Version Change
+
+permissions:
+  contents: write
+  actions: read
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Cargo.toml'
+
+jobs:
+  check_version_change:
+    name: Check version change
+    runs-on: ubuntu-latest
+    outputs:
+      version_changed: ${{ steps.check_version.outputs.version_changed }}
+      new_version: ${{ steps.check_version.outputs.new_version }}
+      tag_exists: ${{ steps.check_tag.outputs.tag_exists }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Check if version changed
+        id: check_version
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            const fs = require('fs');
+            
+            try {
+              // Get current version from Cargo.toml
+              const cargoToml = fs.readFileSync('Cargo.toml', 'utf8');
+              const currentVersionMatch = cargoToml.match(/version\s*=\s*"([^"]+)"/);
+              
+              if (!currentVersionMatch) {
+                console.log('Could not parse current version from Cargo.toml');
+                require('fs').appendFileSync(process.env.GITHUB_OUTPUT, 'version_changed=false\n');
+                return;
+              }
+              
+              const currentVersion = currentVersionMatch[1];
+              console.log(`Current version: ${currentVersion}`);
+              
+              // Get previous version from latest git tag
+              let previousVersion = '0.1.0'; // Default if no tags exist
+              try {
+                const latestTag = execSync('git describe --tags --abbrev=0 --match="v*" 2>/dev/null', { encoding: 'utf8' }).trim();
+                if (latestTag) {
+                  // Remove 'v' prefix from tag (e.g., 'v0.1.0' -> '0.1.0')
+                  previousVersion = latestTag.replace(/^v/, '');
+                  console.log(`Latest tag version: ${previousVersion}`);
+                } else {
+                  console.log('No existing tags found, using default: 0.1.0');
+                }
+              } catch (error) {
+                console.log('No existing tags found, using default: 0.1.0');
+              }
+              
+              // Check if version changed
+              const versionChanged = currentVersion !== previousVersion;
+              console.log(`Version changed: ${versionChanged} (${previousVersion} -> ${currentVersion})`);
+              
+              require('fs').appendFileSync(process.env.GITHUB_OUTPUT, `version_changed=${versionChanged ? 'true' : 'false'}\n`);
+              require('fs').appendFileSync(process.env.GITHUB_OUTPUT, `new_version=${currentVersion}\n`);
+              
+            } catch (error) {
+              console.error('Error checking version change:', error);
+              require('fs').appendFileSync(process.env.GITHUB_OUTPUT, 'version_changed=false\n');
+            }
+      
+      - name: Check if tag already exists
+        id: check_tag
+        if: steps.check_version.outputs.version_changed == 'true'
+        run: |
+          VERSION="${{ steps.check_version.outputs.new_version }}"
+          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+            echo "Tag v${VERSION} already exists"
+          else
+            echo "tag_exists=false" >> $GITHUB_OUTPUT
+            echo "Tag v${VERSION} does not exist"
+          fi
+
+  auto_release:
+    name: Auto create release
+    needs: check_version_change
+    if: needs.check_version_change.outputs.version_changed == 'true' && needs.check_version_change.outputs.tag_exists == 'false'
+    uses: ./.github/workflows/release.yml
+    with:
+      version: ${{ needs.check_version_change.outputs.new_version }}

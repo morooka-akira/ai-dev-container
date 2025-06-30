@@ -1,0 +1,237 @@
+name: Create Release
+
+permissions:
+  contents: write
+  actions: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Semantic version"
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        description: "Semantic version"
+        required: true
+        type: string
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.78.0
+          profile: minimal
+      - name: Run tests
+        run: cargo test --all
+
+  create_tag:
+    name: Create tag
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Git user
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+      - name: Validate version and display info
+        run: |
+          VERSION="${{ inputs.version || github.event.inputs.version }}"
+          echo "Creating release for version: ${VERSION}"
+          echo "Tag will be: v${VERSION}"
+          
+          # Validate semantic version format
+          if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
+            echo "Invalid semantic version format: ${VERSION}"
+            exit 1
+          fi
+          
+          echo "Version format is valid"
+      - name: Check if tag exists
+        run: |
+          VERSION="${{ inputs.version || github.event.inputs.version }}"
+          if git rev-parse v${VERSION} >/dev/null 2>&1; then
+            echo "Tag v${VERSION} already exists"
+            exit 1
+          fi
+      - name: Tag and push
+        run: |
+          VERSION="${{ inputs.version || github.event.inputs.version }}"
+          git tag v${VERSION}
+          git push origin v${VERSION}
+
+  build:
+    name: Build binaries
+    needs: create_tag
+    strategy:
+      matrix:
+        include:
+          # Linux x86_64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: aicm-x86_64-unknown-linux-gnu
+          # Linux ARM64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact_name: aicm-aarch64-unknown-linux-gnu
+          # macOS Apple Silicon (arm64)
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: aicm-aarch64-apple-darwin
+          # macOS Intel (x86_64)
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: aicm-x86_64-apple-darwin
+          # Windows x86_64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: aicm-x86_64-pc-windows-msvc.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.78.0
+          profile: minimal
+      - name: Install cross-compilation dependencies
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+      - name: Add target
+        run: rustup target add ${{ matrix.target }}
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+      - name: Package artifact
+        shell: bash
+        run: |
+          mkdir -p dist
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            cp target/${{ matrix.target }}/release/aicm.exe dist/${{ matrix.artifact_name }}
+          else
+            cp target/${{ matrix.target }}/release/aicm dist/${{ matrix.artifact_name }}
+          fi
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/${{ matrix.artifact_name }}
+
+  release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Generate release notes
+        id: generate_notes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('Generating release notes...');
+            
+            // Get all releases to find the previous one
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            
+            // Find previous release (excluding current version if it exists)
+            const currentVersion = '${{ inputs.version || github.event.inputs.version }}';
+            const previousRelease = releases.find(release => 
+              release.tag_name !== `v${currentVersion}` && !release.draft && !release.prerelease
+            );
+            
+            let sinceDate;
+            let compareUrl = '';
+            
+            if (previousRelease) {
+              console.log(`Previous release found: ${previousRelease.tag_name}`);
+              sinceDate = previousRelease.published_at;
+              compareUrl = `\n\n**Full Changelog**: https://github.com/${context.repo.owner}/${context.repo.repo}/compare/${previousRelease.tag_name}...${currentVersion}`;
+            } else {
+              console.log('No previous release found, using repository creation date');
+              const { data: repo } = await github.rest.repos.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              });
+              sinceDate = repo.created_at;
+            }
+            
+            // Get merged PRs since the previous release
+            const { data: pulls } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'closed',
+              base: 'main',
+              sort: 'updated',
+              direction: 'desc',
+              per_page: 100
+            });
+            
+            // Filter PRs that were merged after the previous release
+            const mergedPRs = pulls.filter(pr => 
+              pr.merged_at && 
+              new Date(pr.merged_at) > new Date(sinceDate)
+            );
+            
+            // Generate release notes
+            let releaseNotes = '## What\'s Changed\n';
+            
+            if (mergedPRs.length > 0) {
+              for (const pr of mergedPRs) {
+                releaseNotes += `- ${pr.title} #${pr.number}\n`;
+              }
+            } else {
+              releaseNotes += '- No merged pull requests since last release\n';
+            }
+            
+            releaseNotes += compareUrl;
+            
+            // Set output for next step
+            require('fs').appendFileSync(process.env.GITHUB_OUTPUT, `release_notes<<EOF\n${releaseNotes}\nEOF\n`);
+            console.log('Release notes generated successfully');
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version || github.event.inputs.version }}
+          name: Release v${{ inputs.version || github.event.inputs.version }}
+          body: ${{ steps.generate_notes.outputs.release_notes }}
+          files: dist/**/*
