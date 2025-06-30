@@ -1,10 +1,10 @@
 use clap::{Parser, Subcommand};
 
-const DEFAULT_CONFIG_FILE: &str = "workspace.yml";
+const DEFAULT_CONFIG_FILE: &str = ".gitws.yml";
 
 #[derive(Parser, Debug)]
-#[command(name = "ai-workspace")]
-#[command(about = "AI workspace management tool")]
+#[command(name = "gitws")]
+#[command(about = "Git workspace management tool")]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
