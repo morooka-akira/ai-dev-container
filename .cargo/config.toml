@@ -1,18 +1,21 @@
-[target.x86_64-unknown-linux-gnu]
-rustflags = [
-    "-C", "target-feature=+crt-static",
-    "-C", "link-arg=-static",
-    "-C", "link-arg=-lc",
-    "-C", "link-arg=-lgcc"
-]
+# Static linking configuration for release builds only
+# These flags are problematic for proc-macros and tests
 
-[target.aarch64-unknown-linux-gnu]
-rustflags = [
-    "-C", "target-feature=+crt-static", 
-    "-C", "link-arg=-static",
-    "-C", "link-arg=-lc",
-    "-C", "link-arg=-lgcc"
-]
+# [target.x86_64-unknown-linux-gnu]
+# rustflags = [
+#     "-C", "target-feature=+crt-static",
+#     "-C", "link-arg=-static",
+#     "-C", "link-arg=-lc", 
+#     "-C", "link-arg=-lgcc"
+# ]
+
+# [target.aarch64-unknown-linux-gnu]
+# rustflags = [
+#     "-C", "target-feature=+crt-static",
+#     "-C", "link-arg=-static", 
+#     "-C", "link-arg=-lc",
+#     "-C", "link-arg=-lgcc"
+# ]
 
 [target.x86_64-apple-darwin]
 rustflags = ["-C", "link-arg=-framework", "-C", "link-arg=Security", "-C", "link-arg=-framework", "-C", "link-arg=CoreFoundation"]
