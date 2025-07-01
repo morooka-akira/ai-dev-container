@@ -12,7 +12,7 @@ clap = { version = "4.0", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
-git2 = { version = "0.20", features = ["vendored-openssl", "vendored-libgit2"] }
+git2 = { version = "0.20", features = ["vendored-openssl", "vendored-libgit2", "zlib-ng-compat"] }
 ratatui = "0.29"
 crossterm = "0.29"
 thiserror = "2.0"
@@ -27,3 +27,10 @@ strip = true
 lto = true
 codegen-units = 1
 panic = "abort"
+
+# Static linking for better compatibility in diverse environments
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.aarch64-unknown-linux-gnu]  
+rustflags = ["-C", "target-feature=+crt-static"]
