@@ -18,6 +18,13 @@ Git worktree を活用して複数の開発ワークスペースを管理する�
 
 ## 🛠️ インストール
 
+### Homebrew を使用（推奨）
+
+```bash
+brew tap morooka-akira/gitws
+brew install gitws
+```
+
 ### ソースコードから
 
 ```bash

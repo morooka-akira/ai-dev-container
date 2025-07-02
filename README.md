@@ -18,6 +18,13 @@ A simple yet powerful CLI tool for managing multiple development workspaces usin
 
 ## 🛠️ Installation
 
+### Using Homebrew (Recommended)
+
+```bash
+brew tap morooka-akira/gitws
+brew install gitws
+```
+
 ### From Source
 
 ```bash
